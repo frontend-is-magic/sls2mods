@@ -1,0 +1,11 @@
+.godot/
+.mono/
+bin/
+obj/
+dist/
+*.dll
+*.pdb
+*.pck
+*.zip
+sts2.dll
+MapNodeChangerConfig.json

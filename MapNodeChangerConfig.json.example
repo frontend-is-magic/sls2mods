@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "enabled": true,
+  "seed": 0,
+  "skip_current_node": true,
+  "rules": [
+    {
+      "name": "Unknown to Shop",
+      "enabled": true,
+      "from": "Unknown",
+      "to": "Shop",
+      "chance": 0.15,
+      "max_changes": 2
+    },
+    {
+      "name": "Unknown to RestSite",
+      "enabled": true,
+      "from": "Unknown",
+      "to": "RestSite",
+      "chance": 0.10,
+      "max_changes": 2
+    },
+    {
+      "name": "Unknown to Elite",
+      "enabled": false,
+      "from": "Unknown",
+      "to": "Elite",
+      "chance": 0.05,
+      "max_changes": 1
+    }
+  ]
+}

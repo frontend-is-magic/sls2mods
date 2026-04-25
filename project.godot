@@ -1,0 +1,14 @@
+; Engine configuration file.
+; Best edited with Godot, but this minimal file is enough for building the mod.
+
+config_version=5
+
+[application]
+
+config/name="MapNodeChanger"
+config/features=PackedStringArray("4.5", "C#", "Forward Plus")
+config/icon="res://icon.svg"
+
+[dotnet]
+
+project/assembly_name="MapNodeChanger"
