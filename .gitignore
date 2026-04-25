@@ -3,6 +3,9 @@
 bin/
 obj/
 dist/
+*.uid
+*.import
+*.old
 *.dll
 *.pdb
 *.pck
