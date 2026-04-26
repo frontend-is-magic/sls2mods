@@ -10,7 +10,8 @@
 3. 在命令行菜单中选择：
    - `1. Add mod`：从本仓库的 `mods\` 目录选择一个 mod 并安装到游戏目录。
    - `2. Remove mod`：从游戏目录的 `mods\` 文件夹选择一个已安装 mod 并删除。
-   - `3. Exit`：退出脚本。
+   - `3. Change game folder`：重新选择并保存《Slay the Spire 2》安装目录。
+   - `4. Exit`：退出脚本。
 
 脚本会检查所选目录中是否存在 `data_sts2_windows_x86_64\sts2.dll`，以避免把 mod 安装到错误位置。
 
@@ -37,6 +38,7 @@
 5. 显示主菜单。
    - `Add mod` 会列出本仓库 `mods\*` 下带有 `dist\<ModName>.dll` 和 `dist\<ModName>.json` 的 mod。
    - `Remove mod` 会列出玩家游戏目录 `<Slay the Spire 2>\mods\*` 下已有的 mod 文件夹。
+   - `Change game folder` 会重新打开文件夹选择窗口，校验通过后覆盖 `mod-manager-config.yaml`。
    - `Exit` 只退出脚本。
 
 6. 添加 mod。
@@ -62,8 +64,21 @@
 
 In short: the script does not change PATH, registry, Steam, .NET, Godot, or system environment variables.
 
+## Config File
+
+`manage-mods-win11.bat` stores the selected game folder in `mod-manager-config.yaml` next to the script:
+
+```yaml
+game_dir: C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2
+```
+
+On startup, the script checks this file first. If `game_dir` points to a valid Slay the Spire 2 folder, the script uses it and skips the folder picker. If the file is missing or the saved folder is invalid, the script opens the folder picker and writes a fresh `mod-manager-config.yaml` after a valid folder is selected.
+
+Use the `Change game folder` menu option when the game is moved or when you selected the wrong folder. This option opens the folder picker again and overwrites `mod-manager-config.yaml` after validation succeeds.
+
 脚本可能产生这些文件系统改动：
 
+- 创建或覆盖 `mod-manager-config.yaml`，用于保存游戏目录。
 - 创建 `<Slay the Spire 2>\mods`。
 - 创建 `<Slay the Spire 2>\mods\<ModName>`。
 - 覆盖 `<Slay the Spire 2>\mods\<ModName>\<ModName>.dll`。

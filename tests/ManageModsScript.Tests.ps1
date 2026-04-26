@@ -4,6 +4,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $scriptPath = Join-Path $repoRoot "manage-mods-win11.bat"
 $modRoot = Join-Path $repoRoot "mods\VakuuRoomInjection"
 $readmePath = Join-Path $repoRoot "README.md"
+$gitignorePath = Join-Path $repoRoot ".gitignore"
 
 function Assert-True {
     param(
@@ -25,6 +26,10 @@ Assert-True (Test-Path $readmePath) "Root README.md should exist."
 $script = Get-Content -Raw -Path $scriptPath
 Assert-True ($script.Contains("BrowseForFolder")) "Script should open a folder picker for the game directory."
 Assert-True ($script.Contains("GAME_PICK_FILE")) "Script should read the selected game path through a temp file so paths containing parentheses do not break cmd parsing."
+Assert-True ($script.Contains("mod-manager-config.yaml")) "Script should store the selected game directory in a YAML config file."
+Assert-True ($script.Contains(":load_game_dir_config")) "Script should load the game directory from config before opening the folder picker."
+Assert-True ($script.Contains(":save_game_dir_config")) "Script should save the selected game directory after a successful folder picker selection."
+Assert-True ($script.Contains(":change_game_dir")) "Script should provide a menu flow for changing the saved game directory."
 Assert-True ($script.Contains("data_sts2_windows_x86_64\sts2.dll")) "Script should validate the selected Slay the Spire 2 directory."
 Assert-True ($script.Contains("Steam -> Slay the Spire 2 -> Manage -> Browse local files")) "Script should tell players how to find the game directory from Steam."
 Assert-True ($script.Contains(":add_mod")) "Script should implement add mod flow."
@@ -41,11 +46,53 @@ Assert-True ($readme.Contains("mods\VakuuRoomInjection")) "README should documen
 Assert-True ($readme.Contains("Script Step Details")) "README should explain what each script step does."
 Assert-True ($readme.Contains("Potential Side Effects")) "README should clearly list potential side effects."
 Assert-True ($readme.Contains("PATH, registry, Steam, .NET, Godot, or system environment variables")) "README should say the script does not change dependency or system environment settings."
+Assert-True ($readme.Contains("Config File")) "README should document the mod manager YAML config file."
+Assert-True ($readme.Contains("Change game folder")) "README should document the menu option for changing the saved game directory."
+
+$gitignore = Get-Content -Raw -Path $gitignorePath
+Assert-True ($gitignore.Contains("mod-manager-config.yaml")) "Generated mod manager YAML config should be ignored by git."
 
 if (Test-Path "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2\data_sts2_windows_x86_64\sts2.dll") {
     $gameDir = "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2"
-    $cmd = "set `"MOD_MANAGER_TEST_GAME_DIR=$gameDir`"& set `"MOD_MANAGER_TEST_ACTION=3`"& `"$scriptPath`""
+    $configPath = Join-Path $env:TEMP ("sts2-mod-manager-" + [guid]::NewGuid().ToString("N") + ".yaml")
+    $cmd = "set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_GAME_DIR=$gameDir`"& set `"MOD_MANAGER_TEST_ACTION=4`"& `"$scriptPath`""
     $output = & cmd.exe /d /c $cmd
+    Remove-Item -Path $configPath -Force -ErrorAction SilentlyContinue
     Assert-True ($LASTEXITCODE -eq 0) "Script should exit cleanly after a Program Files (x86) game path is selected."
     Assert-True (($output -join "`n").Contains("Selected game folder:")) "Script should reach the main menu after a Program Files (x86) game path is selected."
+}
+
+if (Test-Path "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2\data_sts2_windows_x86_64\sts2.dll") {
+    $gameDir = "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2"
+    $configPath = Join-Path $env:TEMP ("sts2-mod-manager-" + [guid]::NewGuid().ToString("N") + ".yaml")
+    Set-Content -Path $configPath -Value "game_dir: $gameDir" -Encoding ASCII
+    $cmd = "set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_ACTION=4`"& `"$scriptPath`""
+    $output = & cmd.exe /d /c $cmd
+    Remove-Item -Path $configPath -Force -ErrorAction SilentlyContinue
+    Assert-True ($LASTEXITCODE -eq 0) "Script should exit cleanly when using a cached YAML game directory."
+    Assert-True (($output -join "`n").Contains("Using saved game folder:")) "Script should use a valid YAML game directory without opening the folder picker."
+}
+
+if (Test-Path "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2\data_sts2_windows_x86_64\sts2.dll") {
+    $gameDir = "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2"
+    $configPath = Join-Path $env:TEMP ("sts2-mod-manager-" + [guid]::NewGuid().ToString("N") + ".yaml")
+    $cmd = "set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_GAME_DIR=$gameDir`"& set `"MOD_MANAGER_TEST_ACTION=4`"& `"$scriptPath`""
+    $output = & cmd.exe /d /c $cmd
+    $config = Get-Content -Raw -Path $configPath
+    Remove-Item -Path $configPath -Force -ErrorAction SilentlyContinue
+    Assert-True ($LASTEXITCODE -eq 0) "Script should exit cleanly after first-time folder selection."
+    Assert-True ($config.Contains("game_dir: $gameDir")) "Script should write the first selected game directory to YAML config."
+}
+
+if (Test-Path "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2\data_sts2_windows_x86_64\sts2.dll") {
+    $gameDir = "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2"
+    $configPath = Join-Path $env:TEMP ("sts2-mod-manager-" + [guid]::NewGuid().ToString("N") + ".yaml")
+    Set-Content -Path $configPath -Value "game_dir: C:\NotARealSlayTheSpire2Folder" -Encoding ASCII
+    $cmd = "set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_GAME_DIR=$gameDir`"& set `"MOD_MANAGER_TEST_ACTIONS=3,4`"& `"$scriptPath`""
+    $output = & cmd.exe /d /c $cmd
+    $config = Get-Content -Raw -Path $configPath
+    Remove-Item -Path $configPath -Force -ErrorAction SilentlyContinue
+    Assert-True ($LASTEXITCODE -eq 0) "Script should exit cleanly after changing the saved game directory."
+    Assert-True (($output -join "`n").Contains("Saved game folder:")) "Change game folder should save the newly selected directory."
+    Assert-True ($config.Contains("game_dir: $gameDir")) "Change game folder should overwrite the YAML config."
 }
