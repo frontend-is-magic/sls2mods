@@ -30,11 +30,11 @@ public sealed class SharedUtilsTests
     [Fact]
     public void ModConfigLoaderCreatesDefaultConfigWhenMissing()
     {
-        var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        using var tempRoot = TempConfigRoot.Create();
         var logs = new List<string>();
 
         var config = ModConfigLoader.LoadOrCreate(
-            root,
+            tempRoot.Path,
             "ExampleMod",
             "ExampleConfig.json",
             supportedSchemaVersion: 3,
@@ -48,19 +48,18 @@ public sealed class SharedUtilsTests
 
         Assert.Equal(3, config.SchemaVersion);
         Assert.Equal(7, config.Value);
-        Assert.True(File.Exists(Path.Combine(root, "ExampleConfig.json")));
+        Assert.True(File.Exists(Path.Combine(tempRoot.Path, "ExampleConfig.json")));
         Assert.Contains(logs, message => message.Contains("created default config"));
     }
 
     [Fact]
     public void ModConfigLoaderFallsBackForUnsupportedSchema()
     {
-        var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(root);
-        File.WriteAllText(Path.Combine(root, "ExampleConfig.json"), """{"schema_version":2,"value":99}""");
+        using var tempRoot = TempConfigRoot.Create();
+        File.WriteAllText(Path.Combine(tempRoot.Path, "ExampleConfig.json"), """{"schema_version":2,"value":99}""");
 
         var config = ModConfigLoader.LoadOrCreate(
-            root,
+            tempRoot.Path,
             "ExampleMod",
             "ExampleConfig.json",
             supportedSchemaVersion: 3,
@@ -75,12 +74,11 @@ public sealed class SharedUtilsTests
     [Fact]
     public void ModConfigLoaderFallsBackForBadJson()
     {
-        var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(root);
-        File.WriteAllText(Path.Combine(root, "ExampleConfig.json"), "{bad json");
+        using var tempRoot = TempConfigRoot.Create();
+        File.WriteAllText(Path.Combine(tempRoot.Path, "ExampleConfig.json"), "{bad json");
 
         var config = ModConfigLoader.LoadOrCreate(
-            root,
+            tempRoot.Path,
             "ExampleMod",
             "ExampleConfig.json",
             supportedSchemaVersion: 3,
@@ -99,5 +97,31 @@ public sealed class SharedUtilsTests
 
         [JsonPropertyName("value")]
         public int Value { get; set; }
+    }
+
+    private sealed class TempConfigRoot : IDisposable
+    {
+        private TempConfigRoot(string path)
+        {
+            Path = path;
+            Directory.CreateDirectory(path);
+        }
+
+        public string Path { get; }
+
+        public static TempConfigRoot Create()
+        {
+            return new TempConfigRoot(System.IO.Path.Combine(
+                System.IO.Path.GetTempPath(),
+                $"MapNodeChangerTests-{Guid.NewGuid():N}"));
+        }
+
+        public void Dispose()
+        {
+            if (Directory.Exists(Path))
+            {
+                Directory.Delete(Path, recursive: true);
+            }
+        }
     }
 }
