@@ -3,9 +3,9 @@ using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rooms;
-using MapNodeChanger.Utils.AncientOptions;
-using MapNodeChanger.Utils.RoomInjection;
 using MegaCrit.Sts2.Core.Models.Events;
+using Sls2Mods.Utils.AncientOptions;
+using Sls2Mods.Utils.RoomInjection;
 using VakuuEvent = MegaCrit.Sts2.Core.Models.Events.Vakuu;
 
 namespace MapNodeChanger.Features.Vakuu;

@@ -3,7 +3,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 
-namespace MapNodeChanger.Utils.RoomInjection;
+namespace Sls2Mods.Utils.RoomInjection;
 
 public sealed class RoomInjectionContext
 {

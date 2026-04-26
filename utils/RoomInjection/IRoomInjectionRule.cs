@@ -1,6 +1,6 @@
 using MegaCrit.Sts2.Core.Rooms;
 
-namespace MapNodeChanger.Utils.RoomInjection;
+namespace Sls2Mods.Utils.RoomInjection;
 
 public interface IRoomInjectionRule
 {

@@ -3,7 +3,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Random;
 
-namespace MapNodeChanger.Utils.AncientOptions;
+namespace Sls2Mods.Utils.AncientOptions;
 
 public static class AncientOptionRerollInstaller
 {

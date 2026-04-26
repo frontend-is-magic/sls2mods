@@ -7,8 +7,8 @@ using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Runs;
 using MapNodeChanger.Features.Vakuu;
-using MapNodeChanger.Utils.AncientOptions;
-using MapNodeChanger.Utils.RoomInjection;
+using Sls2Mods.Utils.AncientOptions;
+using Sls2Mods.Utils.RoomInjection;
 
 namespace MapNodeChanger;
 
