@@ -15,7 +15,7 @@ if (-not (Test-Path $stsDll)) {
 
 Copy-Item $stsDll -Destination (Join-Path $PSScriptRoot "sts2.dll") -Force
 
-dotnet build (Join-Path $PSScriptRoot "MapNodeChanger.csproj")
+dotnet build (Join-Path $PSScriptRoot "VakuuRoomInjection.csproj")
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet build failed."
 }

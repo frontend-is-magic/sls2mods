@@ -1,7 +1,7 @@
 using System;
 using System.Text.Json.Serialization;
 
-namespace MapNodeChanger.Features.Vakuu;
+namespace VakuuRoomInjection.Features.Vakuu;
 
 public sealed class VakuuInjectionConfig
 {
