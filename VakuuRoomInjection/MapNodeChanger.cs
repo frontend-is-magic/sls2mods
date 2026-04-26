@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Runs;
 using MapNodeChanger.Features.Vakuu;
+using MapNodeChanger.Utils.AncientOptions;
 using MapNodeChanger.Utils.RoomInjection;
 
 namespace MapNodeChanger;
@@ -18,15 +19,17 @@ public static class MapNodeChanger
 
     private static RunState? _runState;
     private static readonly RoomInjectionService RoomInjectionService = new(LogInfo);
+    private static readonly AncientOptionRerollService AncientOptionRerollService = new(LogInfo);
 
     public static void ModLoaded()
     {
         var config = LoadConfig();
-        RoomInjectionService.Register(new VakuuInjectionRule(config));
+        RoomInjectionService.Register(new VakuuInjectionRule(config, AncientOptionRerollService));
 
         RunManager.Instance.RunStarted += OnRunStarted;
 
         var harmony = new Harmony(ModId);
+        AncientOptionRerollInstaller.Install(harmony, AncientOptionRerollService);
         RoomInjectionInstaller.Install(harmony, RoomInjectionService, () => _runState);
 
         LogInfo("loaded");

@@ -22,6 +22,7 @@ public sealed class RoomInjectionContext
         CurrentMapPoint = runState.CurrentMapPoint;
         CurrentActIndex = runState.CurrentActIndex;
         ActFloor = runState.ActFloor;
+        RoomKey = BuildRoomKey();
     }
 
     public RunState RunState { get; }
@@ -39,4 +40,17 @@ public sealed class RoomInjectionContext
     public int CurrentActIndex { get; }
 
     public int ActFloor { get; }
+
+    public RoomKey RoomKey { get; }
+
+    private RoomKey BuildRoomKey()
+    {
+        var coord = CurrentMapPoint?.coord.ToString() ?? "no_coord";
+        return new RoomKey(
+            CurrentActIndex,
+            ActFloor,
+            coord,
+            MapPointType.ToString(),
+            RolledRoomType.ToString());
+    }
 }

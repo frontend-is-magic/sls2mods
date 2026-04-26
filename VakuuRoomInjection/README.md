@@ -10,6 +10,7 @@ It does not modify the map graph, map node type, node icon, or path layout. Inst
 - Unknown map points have a 66% chance to become a Vakuu event room.
 - Every other non-boss map point has a 6.6% chance to become a Vakuu event room.
 - Natural Ancient rooms are also eligible for the 6.6% roll and can become Vakuu.
+- Each injected Vakuu room rerolls the Ancient 3-choice option set for that room.
 
 ## Configuration
 

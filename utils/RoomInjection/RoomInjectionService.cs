@@ -57,12 +57,6 @@ public sealed class RoomInjectionService
 
     private static RoomKey BuildKey(RoomInjectionContext context)
     {
-        var coord = context.CurrentMapPoint?.coord.ToString() ?? "no_coord";
-        return new RoomKey(
-            context.CurrentActIndex,
-            context.ActFloor,
-            coord,
-            context.MapPointType.ToString(),
-            context.RolledRoomType.ToString());
+        return context.RoomKey;
     }
 }

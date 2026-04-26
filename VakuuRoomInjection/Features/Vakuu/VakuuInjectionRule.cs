@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rooms;
+using MapNodeChanger.Utils.AncientOptions;
 using MapNodeChanger.Utils.RoomInjection;
 using VakuuEvent = MegaCrit.Sts2.Core.Models.Events.Vakuu;
 
@@ -11,11 +12,13 @@ namespace MapNodeChanger.Features.Vakuu;
 public sealed class VakuuInjectionRule : IRoomInjectionRule
 {
     private readonly VakuuInjectionConfig _config;
+    private readonly AncientOptionRerollService _ancientOptionRerollService;
     private readonly Random _rng;
 
-    public VakuuInjectionRule(VakuuInjectionConfig config)
+    public VakuuInjectionRule(VakuuInjectionConfig config, AncientOptionRerollService ancientOptionRerollService)
     {
         _config = config.Normalize();
+        _ancientOptionRerollService = ancientOptionRerollService;
         _rng = config.Seed == 0 ? new Random() : new Random(config.Seed);
     }
 
@@ -59,7 +62,17 @@ public sealed class VakuuInjectionRule : IRoomInjectionRule
             return false;
         }
 
-        replacement = new EventRoom(ModelDb.Event<VakuuEvent>());
+        var seedMaterial = $"{Name}|{context.RoomKey}";
+        replacement = new EventRoom(ModelDb.Event<VakuuEvent>())
+        {
+            OnStart = eventModel =>
+            {
+                if (eventModel is AncientEventModel ancientEvent)
+                {
+                    _ancientOptionRerollService.RequestReroll(ancientEvent, seedMaterial);
+                }
+            }
+        };
         return true;
     }
 
