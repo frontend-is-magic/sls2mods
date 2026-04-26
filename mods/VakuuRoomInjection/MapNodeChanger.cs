@@ -6,14 +6,14 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Runs;
-using MapNodeChanger.Features.Vakuu;
+using VakuuRoomInjection.Features.Vakuu;
 using Sls2Mods.Utils.AncientOptions;
 using Sls2Mods.Utils.RoomInjection;
 
-namespace MapNodeChanger;
+namespace VakuuRoomInjection;
 
 [ModInitializer("ModLoaded")]
-public static class MapNodeChanger
+public static class VakuuRoomInjectionMod
 {
     private const string ModId = "VakuuRoomInjection";
     private const int SupportedSchemaVersion = 2;

@@ -8,7 +8,7 @@ using Sls2Mods.Utils.AncientOptions;
 using Sls2Mods.Utils.RoomInjection;
 using VakuuEvent = MegaCrit.Sts2.Core.Models.Events.Vakuu;
 
-namespace MapNodeChanger.Features.Vakuu;
+namespace VakuuRoomInjection.Features.Vakuu;
 
 public sealed class VakuuInjectionRule : IRoomInjectionRule
 {

@@ -1,4 +1,4 @@
-namespace MapNodeChanger.Features.Vakuu;
+namespace VakuuRoomInjection.Features.Vakuu;
 
 public enum AncientTarget
 {

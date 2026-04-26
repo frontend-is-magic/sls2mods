@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\mods\VakuuRoomInjection\MapNodeChanger.csproj" />
+    <ProjectReference Include="..\..\mods\VakuuRoomInjection\VakuuRoomInjection.csproj" />
     <Reference Include="BaseLib">
       <HintPath>$(BaseLibDir)\BaseLib.dll</HintPath>
     </Reference>

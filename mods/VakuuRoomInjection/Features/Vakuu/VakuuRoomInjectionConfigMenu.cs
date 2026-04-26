@@ -1,6 +1,6 @@
 using BaseLib.Config;
 
-namespace MapNodeChanger.Features.Vakuu;
+namespace VakuuRoomInjection.Features.Vakuu;
 
 public sealed class VakuuRoomInjectionConfigMenu : SimpleModConfig
 {

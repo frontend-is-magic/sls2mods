@@ -1,7 +1,7 @@
-using MapNodeChanger.Features.Vakuu;
+using VakuuRoomInjection.Features.Vakuu;
 using Xunit;
 
-namespace MapNodeChanger.Tests;
+namespace VakuuRoomInjection.Tests;
 
 public sealed class VakuuInjectionConfigTests
 {
