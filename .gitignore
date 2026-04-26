@@ -12,3 +12,5 @@ dist/
 *.zip
 sts2.dll
 MapNodeChangerConfig.json
+mod-manager-config.yaml
+.worktrees/

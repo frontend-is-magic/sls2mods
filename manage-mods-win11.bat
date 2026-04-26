@@ -3,17 +3,34 @@ setlocal EnableExtensions EnableDelayedExpansion
 
 set "SCRIPT_DIR=%~dp0"
 if not defined POWERSHELL_EXE set "POWERSHELL_EXE=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
+if defined MOD_MANAGER_TEST_CONFIG_PATH (
+    set "CONFIG_PATH=%MOD_MANAGER_TEST_CONFIG_PATH%"
+) else (
+    set "CONFIG_PATH=%SCRIPT_DIR%mod-manager-config.yaml"
+)
 pushd "%SCRIPT_DIR%" >nul
 
 echo Slay the Spire 2 Mod Manager
 echo.
+call :load_game_dir_config
+if errorlevel 1 goto :select_initial_game_dir
+
+echo Using saved game folder:
+echo !GAME_DIR!
+echo.
+goto :after_game_dir
+
+:select_initial_game_dir
 echo Select your Slay the Spire 2 installation folder in the folder picker.
 echo Tip: Steam -^> Slay the Spire 2 -^> Manage -^> Browse local files
 rem Steam -> Slay the Spire 2 -> Manage -> Browse local files
 echo.
 
-call :pick_game_dir
+call :choose_dir
 if errorlevel 1 goto :end
+call :save_game_dir_config
+
+:after_game_dir
 
 set "GAME_MODS=!GAME_DIR!\mods"
 if not exist "!GAME_MODS!" mkdir "!GAME_MODS!"
@@ -25,8 +42,14 @@ echo !GAME_DIR!
 echo.
 echo 1. Add mod
 echo 2. Remove mod
-echo 3. Exit
-if defined MOD_MANAGER_TEST_ACTION (
+echo 3. Change game folder
+echo 4. Exit
+if defined MOD_MANAGER_TEST_ACTIONS (
+    for /f "tokens=1,* delims=," %%A in ("!MOD_MANAGER_TEST_ACTIONS!") do (
+        set "ACTION=%%A"
+        set "MOD_MANAGER_TEST_ACTIONS=%%B"
+    )
+) else if defined MOD_MANAGER_TEST_ACTION (
     set "ACTION=%MOD_MANAGER_TEST_ACTION%"
 ) else (
     set /p "ACTION=Choose an option: "
@@ -34,12 +57,33 @@ if defined MOD_MANAGER_TEST_ACTION (
 
 if "%ACTION%"=="1" goto :add_mod
 if "%ACTION%"=="2" goto :remove_mod
-if "%ACTION%"=="3" goto :end
+if "%ACTION%"=="3" goto :change_game_dir
+if "%ACTION%"=="4" goto :end
 
 echo Invalid option.
 goto :main_menu
 
-:pick_game_dir
+:load_game_dir_config
+set "GAME_DIR="
+if not exist "!CONFIG_PATH!" exit /b 1
+
+for /f "usebackq tokens=1,* delims=:" %%A in ("!CONFIG_PATH!") do (
+    if /i "%%A"=="game_dir" (
+        set "GAME_DIR=%%B"
+        if "!GAME_DIR:~0,1!"==" " set "GAME_DIR=!GAME_DIR:~1!"
+    )
+)
+
+if not defined GAME_DIR exit /b 1
+
+call :validate_game_dir
+exit /b %ERRORLEVEL%
+
+:save_game_dir_config
+> "!CONFIG_PATH!" echo game_dir: !GAME_DIR!
+exit /b 0
+
+:choose_dir
 if defined MOD_MANAGER_TEST_GAME_DIR (
     set "GAME_DIR=%MOD_MANAGER_TEST_GAME_DIR%"
     goto :validate_game_dir
@@ -67,6 +111,20 @@ if not exist "!GAME_DIR!\data_sts2_windows_x86_64\sts2.dll" (
 )
 
 exit /b 0
+
+:change_game_dir
+echo.
+echo Select the new Slay the Spire 2 installation folder.
+echo Tip: Steam -^> Slay the Spire 2 -^> Manage -^> Browse local files
+echo.
+call :choose_dir
+if errorlevel 1 goto :main_menu
+call :save_game_dir_config
+set "GAME_MODS=!GAME_DIR!\mods"
+if not exist "!GAME_MODS!" mkdir "!GAME_MODS!"
+echo Saved game folder:
+echo !GAME_DIR!
+goto :main_menu
 
 :add_mod
 call :list_repo_mods
