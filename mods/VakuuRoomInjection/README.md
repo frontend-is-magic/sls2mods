@@ -17,11 +17,11 @@ The script asks for the Slay the Spire 2 folder with a folder picker, then insta
 ## Default Behavior
 
 - Boss rooms are never replaced.
-- The target Ancient defaults to Vakuu and can be changed in the in-game BaseLib mod settings menu.
+- The target Ancient defaults to Vakuu and can be changed in the in-game BaseLib mod settings menu. Choose `Random` to roll one concrete Ancient for each replaced room.
 - Unknown map points have a 66% chance to become the selected Ancient event room.
 - Every other non-boss map point has a 6.6% chance to become the selected Ancient event room.
-- Natural Ancient rooms are also eligible for the 6.6% roll and can become Vakuu.
-- Each injected Vakuu room rerolls the Ancient 3-choice option set for that room.
+- Natural Ancient rooms are also eligible for the 6.6% roll and can become the selected Ancient.
+- Each injected Ancient room rerolls the Ancient 3-choice option set for that room.
 
 ## Configuration
 

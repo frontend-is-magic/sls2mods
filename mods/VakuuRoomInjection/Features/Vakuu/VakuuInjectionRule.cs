@@ -12,6 +12,18 @@ namespace VakuuRoomInjection.Features.Vakuu;
 
 public sealed class VakuuInjectionRule : IRoomInjectionRule
 {
+    public static readonly IReadOnlyList<AncientTarget> ConcreteAncientTargets = new[]
+    {
+        AncientTarget.Darv,
+        AncientTarget.Neow,
+        AncientTarget.Nonupeipe,
+        AncientTarget.Orobas,
+        AncientTarget.Pael,
+        AncientTarget.Tanx,
+        AncientTarget.Tezcatara,
+        AncientTarget.Vakuu
+    };
+
     private readonly Func<VakuuInjectionConfig> _getConfig;
     private readonly AncientOptionRerollService _ancientOptionRerollService;
     private readonly Random _rng;
@@ -65,8 +77,9 @@ public sealed class VakuuInjectionRule : IRoomInjectionRule
             return false;
         }
 
-        var seedMaterial = $"{Name}|{config.AncientTarget}|{context.RoomKey}";
-        replacement = new EventRoom(CreateAncientEvent(config.AncientTarget))
+        var target = ResolveAncientTarget(config.AncientTarget, _rng);
+        var seedMaterial = $"{Name}|{target}|{context.RoomKey}";
+        replacement = new EventRoom(CreateAncientEvent(target))
         {
             OnStart = eventModel =>
             {
@@ -77,6 +90,16 @@ public sealed class VakuuInjectionRule : IRoomInjectionRule
             }
         };
         return true;
+    }
+
+    public static AncientTarget ResolveAncientTarget(AncientTarget target, Random rng)
+    {
+        if (target != AncientTarget.Random)
+        {
+            return target;
+        }
+
+        return ConcreteAncientTargets[rng.Next(ConcreteAncientTargets.Count)];
     }
 
     private static AncientEventModel CreateAncientEvent(AncientTarget target)
