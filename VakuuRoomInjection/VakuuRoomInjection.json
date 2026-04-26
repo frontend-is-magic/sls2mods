@@ -1,6 +1,6 @@
 {
-  "id": "MapNodeChanger",
-  "name": "Vakuu Room Injection",
+  "id": "VakuuRoomInjection",
+  "name": "VakuuRoomInjection",
   "author": "Local",
   "description": "Injects the Vakuu Ancient event when entering non-boss rooms.",
   "version": "0.1.0",

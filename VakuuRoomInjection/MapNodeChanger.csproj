@@ -1,6 +1,7 @@
 <Project Sdk="Godot.NET.Sdk/4.6.2">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>VakuuRoomInjection</AssemblyName>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

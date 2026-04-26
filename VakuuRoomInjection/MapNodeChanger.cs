@@ -15,7 +15,7 @@ namespace MapNodeChanger;
 [ModInitializer("ModLoaded")]
 public static class MapNodeChanger
 {
-    private const string ModId = "MapNodeChanger";
+    private const string ModId = "VakuuRoomInjection";
     private const int SupportedSchemaVersion = 2;
 
     private static RunState? _runState;
@@ -54,7 +54,7 @@ public static class MapNodeChanger
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "SlayTheSpire2",
             "mod_configs");
-        var path = Path.Combine(configDir, "MapNodeChangerConfig.json");
+        var path = Path.Combine(configDir, "VakuuRoomInjectionConfig.json");
         if (!File.Exists(path))
         {
             var created = new VakuuInjectionConfig();

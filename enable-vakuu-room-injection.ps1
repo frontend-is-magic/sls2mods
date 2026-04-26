@@ -9,9 +9,12 @@ $ErrorActionPreference = "Stop"
 $repoRoot = $PSScriptRoot
 $modRoot = Join-Path $repoRoot "VakuuRoomInjection"
 $dist = Join-Path $modRoot "dist"
-$target = Join-Path $GameDir "mods\MapNodeChanger"
+$modId = "VakuuRoomInjection"
+$target = Join-Path $GameDir "mods\$modId"
+$oldTarget = Join-Path $GameDir "mods\MapNodeChanger"
 $configDir = Join-Path $env:APPDATA "SlayTheSpire2\mod_configs"
-$configPath = Join-Path $configDir "MapNodeChangerConfig.json"
+$configPath = Join-Path $configDir "$($modId)Config.json"
+$oldConfigPath = Join-Path $configDir "MapNodeChangerConfig.json"
 
 if (-not $SkipBuild) {
     & powershell -ExecutionPolicy Bypass -File (Join-Path $modRoot "build.ps1") -GameDir $GameDir -Godot $Godot
@@ -21,8 +24,8 @@ if (-not $SkipBuild) {
 }
 
 $requiredFiles = @(
-    "MapNodeChanger.dll",
-    "MapNodeChanger.json"
+    "$modId.dll",
+    "$modId.json"
 )
 
 foreach ($file in $requiredFiles) {
@@ -39,11 +42,21 @@ foreach ($file in $requiredFiles) {
 
 Remove-Item -Path (Join-Path $target "MapNodeChanger.pck") -Force -ErrorAction SilentlyContinue
 Remove-Item -Path (Join-Path $target "MapNodeChangerConfig.json") -Force -ErrorAction SilentlyContinue
+Remove-Item -Path (Join-Path $target "$modId.pck") -Force -ErrorAction SilentlyContinue
+Remove-Item -Path (Join-Path $target "$($modId)Config.json") -Force -ErrorAction SilentlyContinue
 
 New-Item -ItemType Directory -Force -Path $configDir | Out-Null
 if (-not (Test-Path $configPath)) {
-    Copy-Item (Join-Path $modRoot "MapNodeChangerConfig.json.example") -Destination $configPath -Force
+    if (Test-Path $oldConfigPath) {
+        Copy-Item $oldConfigPath -Destination $configPath -Force
+    } else {
+        Copy-Item (Join-Path $modRoot "$($modId)Config.json.example") -Destination $configPath -Force
+    }
 }
 
-Write-Host "Enabled Vakuu Room Injection at $target"
+if ((Test-Path $oldTarget) -and ($oldTarget -ne $target)) {
+    Remove-Item -Path $oldTarget -Recurse -Force
+}
+
+Write-Host "Enabled VakuuRoomInjection at $target"
 Write-Host "Config path: $configPath"

@@ -1,6 +1,6 @@
-# MapNodeChanger
+# VakuuRoomInjection
 
-MapNodeChanger is a Slay the Spire 2 mod that injects the existing Ancient event `Vakuu` when entering rooms.
+VakuuRoomInjection is a Slay the Spire 2 mod that injects the selected Ancient event when entering rooms.
 
 It does not modify the map graph, map node type, node icon, or path layout. Instead, it hooks room creation and may replace the room that is about to be entered.
 
@@ -15,8 +15,8 @@ It does not modify the map graph, map node type, node icon, or path layout. Inst
 
 ## Configuration
 
-The mod reads config from `%APPDATA%\SlayTheSpire2\mod_configs\MapNodeChangerConfig.json`.
-The enable script creates this file from `MapNodeChangerConfig.json.example` if it does not already exist.
+The mod reads config from `%APPDATA%\SlayTheSpire2\mod_configs\VakuuRoomInjectionConfig.json`.
+The enable script creates this file from `VakuuRoomInjectionConfig.json.example` if it does not already exist.
 When BaseLib is installed, the in-game mod settings menu is preferred for these values.
 
 ```json

@@ -20,17 +20,22 @@ if ($LASTEXITCODE -ne 0) {
     throw "dotnet build failed."
 }
 
-$dll = Join-Path $PSScriptRoot ".godot\mono\temp\bin\Debug\MapNodeChanger.dll"
+$modId = "VakuuRoomInjection"
+$dll = Join-Path $PSScriptRoot ".godot\mono\temp\bin\Debug\$modId.dll"
 if (-not (Test-Path $dll)) {
     throw "Built DLL not found at $dll"
 }
 
 $dist = Join-Path $PSScriptRoot "dist"
 New-Item -ItemType Directory -Force -Path $dist | Out-Null
+Remove-Item -Path (Join-Path $dist "MapNodeChanger.dll") -Force -ErrorAction SilentlyContinue
+Remove-Item -Path (Join-Path $dist "MapNodeChanger.json") -Force -ErrorAction SilentlyContinue
 Remove-Item -Path (Join-Path $dist "MapNodeChanger.pck") -Force -ErrorAction SilentlyContinue
 Remove-Item -Path (Join-Path $dist "MapNodeChangerConfig.json") -Force -ErrorAction SilentlyContinue
-Copy-Item $dll -Destination (Join-Path $dist "MapNodeChanger.dll") -Force
-Copy-Item (Join-Path $PSScriptRoot "MapNodeChanger.json") -Destination (Join-Path $dist "MapNodeChanger.json") -Force
+Remove-Item -Path (Join-Path $dist "$modId.pck") -Force -ErrorAction SilentlyContinue
+Remove-Item -Path (Join-Path $dist "$($modId)Config.json") -Force -ErrorAction SilentlyContinue
+Copy-Item $dll -Destination (Join-Path $dist "$modId.dll") -Force
+Copy-Item (Join-Path $PSScriptRoot "$modId.json") -Destination (Join-Path $dist "$modId.json") -Force
 
 Write-Host "Built mod files in $dist"
 }
