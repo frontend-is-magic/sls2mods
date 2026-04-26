@@ -4,6 +4,16 @@ VakuuRoomInjection is a Slay the Spire 2 mod that injects the selected Ancient e
 
 It does not modify the map graph, map node type, node icon, or path layout. Instead, it hooks room creation and may replace the room that is about to be entered.
 
+## Install
+
+Players should install or remove this mod with the repository-level Windows 11 script:
+
+```text
+..\..\manage-mods-win11.bat
+```
+
+The script asks for the Slay the Spire 2 folder with a folder picker, then installs the built files from `mods\VakuuRoomInjection\dist` into the game's `mods\VakuuRoomInjection` folder.
+
 ## Default Behavior
 
 - Boss rooms are never replaced.
@@ -16,7 +26,7 @@ It does not modify the map graph, map node type, node icon, or path layout. Inst
 ## Configuration
 
 The mod reads config from `%APPDATA%\SlayTheSpire2\mod_configs\VakuuRoomInjectionConfig.json`.
-The enable script creates this file from `VakuuRoomInjectionConfig.json.example` if it does not already exist.
+The Win11 mod manager script creates this file from `VakuuRoomInjectionConfig.json.example` if it does not already exist.
 When BaseLib is installed, the in-game mod settings menu is preferred for these values.
 
 ```json
@@ -35,7 +45,7 @@ When BaseLib is installed, the in-game mod settings menu is preferred for these 
 ## Build
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\build.ps1
+powershell -ExecutionPolicy Bypass -File .\mods\VakuuRoomInjection\build.ps1
 ```
 
 The packaged mod files are written to `dist\`.
