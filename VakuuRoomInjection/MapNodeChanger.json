@@ -1,8 +1,8 @@
 {
   "id": "MapNodeChanger",
-  "name": "MapNodeChanger",
+  "name": "Vakuu Room Injection",
   "author": "Local",
-  "description": "Configurable Slay the Spire 2 map node type changer.",
+  "description": "Injects the Vakuu Ancient event when entering non-boss rooms.",
   "version": "0.1.0",
   "has_pck": true,
   "has_dll": true,

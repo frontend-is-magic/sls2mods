@@ -5,6 +5,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+$previousLocation = Get-Location
+Set-Location $PSScriptRoot
+try {
 $stsDll = Join-Path $GameDir "data_sts2_windows_x86_64\sts2.dll"
 if (-not (Test-Path $stsDll)) {
     throw "sts2.dll not found at $stsDll"
@@ -34,3 +37,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "Built mod files in $dist"
+}
+finally {
+    Set-Location $previousLocation
+}
