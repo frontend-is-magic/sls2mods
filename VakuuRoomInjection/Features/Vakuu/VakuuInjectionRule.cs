@@ -5,20 +5,22 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rooms;
 using MapNodeChanger.Utils.AncientOptions;
 using MapNodeChanger.Utils.RoomInjection;
+using MegaCrit.Sts2.Core.Models.Events;
 using VakuuEvent = MegaCrit.Sts2.Core.Models.Events.Vakuu;
 
 namespace MapNodeChanger.Features.Vakuu;
 
 public sealed class VakuuInjectionRule : IRoomInjectionRule
 {
-    private readonly VakuuInjectionConfig _config;
+    private readonly Func<VakuuInjectionConfig> _getConfig;
     private readonly AncientOptionRerollService _ancientOptionRerollService;
     private readonly Random _rng;
 
-    public VakuuInjectionRule(VakuuInjectionConfig config, AncientOptionRerollService ancientOptionRerollService)
+    public VakuuInjectionRule(Func<VakuuInjectionConfig> getConfig, AncientOptionRerollService ancientOptionRerollService)
     {
-        _config = config.Normalize();
+        _getConfig = getConfig;
         _ancientOptionRerollService = ancientOptionRerollService;
+        var config = getConfig();
         _rng = config.Seed == 0 ? new Random() : new Random(config.Seed);
     }
 
@@ -27,8 +29,9 @@ public sealed class VakuuInjectionRule : IRoomInjectionRule
     public bool TryCreateReplacement(RoomInjectionContext context, out AbstractRoom replacement)
     {
         replacement = context.OriginalRoom;
+        var config = _getConfig();
 
-        if (!_config.Enabled)
+        if (!config.Enabled)
         {
             return false;
         }
@@ -45,15 +48,15 @@ public sealed class VakuuInjectionRule : IRoomInjectionRule
             return false;
         }
 
-        if (context.MapPointType == MapPointType.Ancient && !_config.ReplaceNaturalAncient)
+        if (context.MapPointType == MapPointType.Ancient && !config.ReplaceNaturalAncient)
         {
             LogRoll(context, 0, false, "natural ancient replacement is disabled");
             return false;
         }
 
         var chance = context.MapPointType == MapPointType.Unknown
-            ? _config.UnknownRoomChance
-            : _config.OtherRoomChance;
+            ? config.UnknownRoomChance
+            : config.OtherRoomChance;
         var shouldReplace = _rng.NextDouble() < chance;
         LogRoll(context, chance, shouldReplace, "rolled");
 
@@ -62,8 +65,8 @@ public sealed class VakuuInjectionRule : IRoomInjectionRule
             return false;
         }
 
-        var seedMaterial = $"{Name}|{context.RoomKey}";
-        replacement = new EventRoom(ModelDb.Event<VakuuEvent>())
+        var seedMaterial = $"{Name}|{config.AncientTarget}|{context.RoomKey}";
+        replacement = new EventRoom(CreateAncientEvent(config.AncientTarget))
         {
             OnStart = eventModel =>
             {
@@ -76,9 +79,25 @@ public sealed class VakuuInjectionRule : IRoomInjectionRule
         return true;
     }
 
+    private static AncientEventModel CreateAncientEvent(AncientTarget target)
+    {
+        return target switch
+        {
+            AncientTarget.Darv => ModelDb.AncientEvent<Darv>(),
+            AncientTarget.Neow => ModelDb.AncientEvent<Neow>(),
+            AncientTarget.Nonupeipe => ModelDb.AncientEvent<Nonupeipe>(),
+            AncientTarget.Orobas => ModelDb.AncientEvent<Orobas>(),
+            AncientTarget.Pael => ModelDb.AncientEvent<Pael>(),
+            AncientTarget.Tanx => ModelDb.AncientEvent<Tanx>(),
+            AncientTarget.Tezcatara => ModelDb.AncientEvent<Tezcatara>(),
+            AncientTarget.Vakuu => ModelDb.AncientEvent<VakuuEvent>(),
+            _ => ModelDb.AncientEvent<VakuuEvent>()
+        };
+    }
+
     private void LogRoll(RoomInjectionContext context, double chance, bool replaced, string reason)
     {
-        if (!_config.LogRolls)
+        if (!_getConfig().LogRolls)
         {
             return;
         }

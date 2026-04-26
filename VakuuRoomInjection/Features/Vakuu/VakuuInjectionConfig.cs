@@ -14,6 +14,10 @@ public sealed class VakuuInjectionConfig
     [JsonPropertyName("seed")]
     public int Seed { get; set; }
 
+    [JsonPropertyName("ancient_target")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public AncientTarget AncientTarget { get; set; } = AncientTarget.Vakuu;
+
     [JsonPropertyName("unknown_room_chance")]
     public double UnknownRoomChance { get; set; } = 0.66;
 

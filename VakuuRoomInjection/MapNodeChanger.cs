@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using BaseLib.Config;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Modding;
@@ -24,7 +25,12 @@ public static class MapNodeChanger
     public static void ModLoaded()
     {
         var config = LoadConfig();
-        RoomInjectionService.Register(new VakuuInjectionRule(config, AncientOptionRerollService));
+        Func<VakuuInjectionConfig> getConfig = () => config;
+        if (TryRegisterConfigMenu())
+        {
+            getConfig = () => VakuuRoomInjectionConfigMenu.ToRuntimeConfig(config);
+        }
+        RoomInjectionService.Register(new VakuuInjectionRule(getConfig, AncientOptionRerollService));
 
         RunManager.Instance.RunStarted += OnRunStarted;
 
@@ -76,6 +82,21 @@ public static class MapNodeChanger
         {
             LogInfo($"failed to load config, using defaults: {ex.Message}");
             return new VakuuInjectionConfig();
+        }
+    }
+
+    private static bool TryRegisterConfigMenu()
+    {
+        try
+        {
+            ModConfigRegistry.Register(ModId, new VakuuRoomInjectionConfigMenu());
+            LogInfo("registered in-game config menu");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            LogInfo($"failed to register in-game config menu, using JSON config only: {ex.Message}");
+            return false;
         }
     }
 

@@ -13,6 +13,10 @@
       <HintPath>$(Sts2DataDir)\0Harmony.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="BaseLib">
+      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2\mods\BaseLib\BaseLib.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="sts2">
       <HintPath>$(Sts2DataDir)\sts2.dll</HintPath>
       <Private>false</Private>

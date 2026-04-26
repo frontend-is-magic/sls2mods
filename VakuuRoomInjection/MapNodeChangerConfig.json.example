@@ -2,6 +2,7 @@
   "schema_version": 2,
   "enabled": true,
   "seed": 0,
+  "ancient_target": "Vakuu",
   "unknown_room_chance": 0.66,
   "other_room_chance": 0.066,
   "replace_natural_ancient": true,
