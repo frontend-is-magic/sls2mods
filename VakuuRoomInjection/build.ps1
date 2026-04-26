@@ -15,9 +15,9 @@ if (-not (Test-Path $stsDll)) {
 
 Copy-Item $stsDll -Destination (Join-Path $PSScriptRoot "sts2.dll") -Force
 
-& $Godot --build-solutions --quit --headless --verbose
+dotnet build (Join-Path $PSScriptRoot "MapNodeChanger.csproj")
 if ($LASTEXITCODE -ne 0) {
-    throw "Godot solution build failed."
+    throw "dotnet build failed."
 }
 
 $dll = Join-Path $PSScriptRoot ".godot\mono\temp\bin\Debug\MapNodeChanger.dll"
@@ -27,14 +27,10 @@ if (-not (Test-Path $dll)) {
 
 $dist = Join-Path $PSScriptRoot "dist"
 New-Item -ItemType Directory -Force -Path $dist | Out-Null
+Remove-Item -Path (Join-Path $dist "MapNodeChanger.pck") -Force -ErrorAction SilentlyContinue
+Remove-Item -Path (Join-Path $dist "MapNodeChangerConfig.json") -Force -ErrorAction SilentlyContinue
 Copy-Item $dll -Destination (Join-Path $dist "MapNodeChanger.dll") -Force
 Copy-Item (Join-Path $PSScriptRoot "MapNodeChanger.json") -Destination (Join-Path $dist "MapNodeChanger.json") -Force
-Copy-Item (Join-Path $PSScriptRoot "MapNodeChangerConfig.json.example") -Destination (Join-Path $dist "MapNodeChangerConfig.json") -Force
-
-& $Godot --export-pack "Windows Desktop" (Join-Path $dist "MapNodeChanger.pck") --headless
-if ($LASTEXITCODE -ne 0) {
-    throw "Godot pck export failed. Open project.godot once in Godot and create a Windows Desktop export preset if needed."
-}
 
 Write-Host "Built mod files in $dist"
 }

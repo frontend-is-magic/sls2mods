@@ -13,7 +13,8 @@ It does not modify the map graph, map node type, node icon, or path layout. Inst
 
 ## Configuration
 
-Copy `MapNodeChangerConfig.json.example` to `MapNodeChangerConfig.json` next to the built mod DLL if you want to customize behavior.
+The mod reads config from `%APPDATA%\SlayTheSpire2\mod_configs\MapNodeChangerConfig.json`.
+The enable script creates this file from `MapNodeChangerConfig.json.example` if it does not already exist.
 
 ```json
 {

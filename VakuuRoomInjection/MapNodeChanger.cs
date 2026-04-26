@@ -41,7 +41,11 @@ public static class MapNodeChanger
 
     private static VakuuInjectionConfig LoadConfig()
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "MapNodeChangerConfig.json");
+        var configDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "SlayTheSpire2",
+            "mod_configs");
+        var path = Path.Combine(configDir, "MapNodeChangerConfig.json");
         if (!File.Exists(path))
         {
             var created = new VakuuInjectionConfig();
@@ -74,6 +78,7 @@ public static class MapNodeChanger
 
     private static void SaveConfig(string path, VakuuInjectionConfig config)
     {
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var options = new JsonSerializerOptions
         {
             WriteIndented = true
