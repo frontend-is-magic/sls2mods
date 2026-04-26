@@ -32,4 +32,27 @@ public sealed class VakuuInjectionConfigTests
         Assert.Equal(0, config.OtherRoomChance);
         Assert.Equal(1, config.UnknownRoomChance);
     }
+
+    [Fact]
+    public void MenuCanSelectRandomAncientTarget()
+    {
+        VakuuRoomInjectionConfigMenu.AncientTarget = AncientTarget.Random;
+        VakuuRoomInjectionConfigMenu.OtherRoomChancePercent = 6.6;
+        VakuuRoomInjectionConfigMenu.UnknownRoomChancePercent = 66;
+
+        var config = VakuuRoomInjectionConfigMenu.ToRuntimeConfig();
+
+        Assert.Equal(AncientTarget.Random, config.AncientTarget);
+    }
+
+    [Fact]
+    public void RandomAncientTargetResolvesToConcreteTarget()
+    {
+        var rng = new Random(123);
+
+        var target = VakuuInjectionRule.ResolveAncientTarget(AncientTarget.Random, rng);
+
+        Assert.NotEqual(AncientTarget.Random, target);
+        Assert.Contains(target, VakuuInjectionRule.ConcreteAncientTargets);
+    }
 }
