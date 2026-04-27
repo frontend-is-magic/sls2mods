@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using Godot;
 
 namespace Sls2Mods.Utils.Config;
 
@@ -8,10 +9,12 @@ public static class ModConfigLoader
 {
     public static string DefaultConfigRoot()
     {
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "SlayTheSpire2",
-            "mod_configs");
+        return Path.Combine(OS.GetUserDataDir(), "mod_configs");
+    }
+
+    public static string DefaultConfigPath(string fileName)
+    {
+        return Path.Combine(DefaultConfigRoot(), fileName);
     }
 
     public static T LoadOrCreate<T>(
@@ -72,7 +75,12 @@ public static class ModConfigLoader
         return LoadOrCreate(DefaultConfigRoot(), modId, fileName, supportedSchemaVersion, createDefault, normalize, log);
     }
 
-    private static void Save<T>(string path, T config)
+    public static void Save<T>(string configRoot, string fileName, T config)
+    {
+        Save(Path.Combine(configRoot, fileName), config);
+    }
+
+    public static void Save<T>(string path, T config)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         var options = new JsonSerializerOptions

@@ -22,7 +22,7 @@ The script asks for the Slay the Spire 2 folder with a folder picker, then insta
 
 ## Configuration
 
-The mod reads config from `%APPDATA%\SlayTheSpire2\mod_configs\CardRewardEnchantmentsConfig.json`.
+The mod reads config from BaseLib's Godot user data config directory, usually `%APPDATA%\SlayTheSpire2\mod_configs\CardRewardEnchantmentsConfig.json` on Windows.
 If the file does not exist, the mod creates it on load.
 When BaseLib is installed, the in-game mod settings menu is preferred for current values.
 

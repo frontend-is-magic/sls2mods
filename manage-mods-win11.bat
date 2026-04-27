@@ -199,28 +199,32 @@ copy /y "%DIST_DIR%\%MOD_ID%.json" "%TARGET_DIR%\%MOD_ID%.json" >nul
 del /q "%TARGET_DIR%\%MOD_ID%.pck" 2>nul
 del /q "%TARGET_DIR%\%MOD_ID%Config.json" 2>nul
 
-if /i "%MOD_ID%"=="VakuuRoomInjection" call :init_vakuu_config
+call :init_mod_config
 if /i "%MOD_ID%"=="VakuuRoomInjection" call :cleanup_old_vakuu_install
 
 echo Installed %MOD_ID% to:
 echo %TARGET_DIR%
 exit /b 0
 
-:init_vakuu_config
+:init_mod_config
 set "CONFIG_DIR=%APPDATA%\SlayTheSpire2\mod_configs"
-set "CONFIG_PATH=%CONFIG_DIR%\VakuuRoomInjectionConfig.json"
-set "OLD_CONFIG_PATH=%CONFIG_DIR%\MapNodeChangerConfig.json"
-set "EXAMPLE_CONFIG=%SCRIPT_DIR%mods\VakuuRoomInjection\VakuuRoomInjectionConfig.json.example"
+set "CONFIG_PATH=%CONFIG_DIR%\%MOD_ID%Config.json"
+set "EXAMPLE_CONFIG=%SCRIPT_DIR%mods\%MOD_ID%\%MOD_ID%Config.json.example"
 
 if not exist "%CONFIG_DIR%" mkdir "%CONFIG_DIR%"
 if exist "%CONFIG_PATH%" exit /b 0
 
-if exist "%OLD_CONFIG_PATH%" (
-    copy /y "%OLD_CONFIG_PATH%" "%CONFIG_PATH%" >nul
-) else (
-    if exist "%EXAMPLE_CONFIG%" copy /y "%EXAMPLE_CONFIG%" "%CONFIG_PATH%" >nul
-)
+if /i "%MOD_ID%"=="VakuuRoomInjection" call :migrate_old_vakuu_config
+if exist "%CONFIG_PATH%" exit /b 0
+if exist "%EXAMPLE_CONFIG%" copy /y "%EXAMPLE_CONFIG%" "%CONFIG_PATH%" >nul
 
+exit /b 0
+
+:migrate_old_vakuu_config
+set "OLD_CONFIG_PATH=%CONFIG_DIR%\MapNodeChangerConfig.json"
+set "CONFIG_PATH=%CONFIG_DIR%\VakuuRoomInjectionConfig.json"
+if exist "%CONFIG_PATH%" exit /b 0
+if exist "%OLD_CONFIG_PATH%" copy /y "%OLD_CONFIG_PATH%" "%CONFIG_PATH%" >nul
 exit /b 0
 
 :cleanup_old_vakuu_install
