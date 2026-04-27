@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "enabled": true,
+  "enchant_chance": 1.0,
+  "blacklisted_keywords": [],
+  "log_rolls": true
+}
