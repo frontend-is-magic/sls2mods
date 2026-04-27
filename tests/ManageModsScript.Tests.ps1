@@ -42,7 +42,30 @@ Assert-True ($script.Contains("-File `"%REPO_MOD_DIR%\build.ps1`"")) "Add mod sh
 Assert-True ($script.Contains("%APPDATA%\SlayTheSpire2\mod_configs")) "Script should initialize the BaseLib mod config directory."
 Assert-True ($script.Contains(":init_mod_config")) "Script should initialize config for any installed mod with a config example."
 Assert-True ($script.Contains("%MOD_ID%Config.json.example")) "Script should discover each mod's example config by mod id."
+Assert-True ($script.Contains("%DIST_DIR%\%MOD_ID%Config.json.example")) "Script should initialize installed configs from dist templates."
 Assert-True ($script.Contains("OLD_TARGET_DIR")) "Script should clean up the old MapNodeChanger install directory when installing VakuuRoomInjection."
+
+$repoMods = Get-ChildItem -Path (Join-Path $repoRoot "mods") -Directory
+foreach ($mod in $repoMods) {
+    $modId = $mod.Name
+    $buildPath = Join-Path $mod.FullName "build.ps1"
+    $manifestPath = Join-Path $mod.FullName "$modId.json"
+    $examplePath = Join-Path $mod.FullName "$modId`Config.json.example"
+
+    Assert-True (Test-Path $manifestPath) "$modId should have a BaseLib manifest named $modId.json."
+    Assert-True (Test-Path $examplePath) "$modId should have an example config named $modId`Config.json.example."
+
+    $manifest = Get-Content -Raw -Path $manifestPath
+    Assert-True ($manifest.Contains('"has_pck": false')) "$modId manifest should mark the mod as not requiring a pck."
+    Assert-True ($manifest.Contains('"has_dll": true')) "$modId manifest should mark the mod as a DLL mod."
+    Assert-True ($manifest.Contains('"dependencies": ["BaseLib"]')) "$modId manifest should declare the BaseLib dependency."
+    Assert-True ($manifest.Contains('"affects_gameplay": true')) "$modId manifest should declare that it affects gameplay."
+
+    if (Test-Path $buildPath) {
+        $build = Get-Content -Raw -Path $buildPath
+        Assert-True ($build.Contains("Config.json.example") -and $build.Contains("Copy-Item") -and $build.Contains('$dist')) "$modId build should copy its example config into dist."
+    }
+}
 
 $readme = Get-Content -Raw -Path $readmePath
 Assert-True ($readme.TrimStart().StartsWith("# Mod Manager")) "README should lead with mod management instructions."

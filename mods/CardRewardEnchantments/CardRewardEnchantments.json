@@ -4,5 +4,9 @@
   "author": "sls2mods",
   "version": "0.1.0",
   "description": "Adds configurable random enchantments to card rewards.",
-  "main": "CardRewardEnchantments.dll"
+  "main": "CardRewardEnchantments.dll",
+  "has_pck": false,
+  "has_dll": true,
+  "dependencies": ["BaseLib"],
+  "affects_gameplay": true
 }

@@ -36,6 +36,7 @@ Remove-Item -Path (Join-Path $dist "$modId.pck") -Force -ErrorAction SilentlyCon
 Remove-Item -Path (Join-Path $dist "$($modId)Config.json") -Force -ErrorAction SilentlyContinue
 Copy-Item $dll -Destination (Join-Path $dist "$modId.dll") -Force
 Copy-Item (Join-Path $PSScriptRoot "$modId.json") -Destination (Join-Path $dist "$modId.json") -Force
+Copy-Item (Join-Path $PSScriptRoot "$($modId)Config.json.example") -Destination (Join-Path $dist "$($modId)Config.json.example") -Force
 
 Write-Host "Built mod files in $dist"
 }
