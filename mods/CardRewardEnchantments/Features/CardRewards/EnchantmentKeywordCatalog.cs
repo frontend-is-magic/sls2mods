@@ -26,14 +26,12 @@ public sealed class EnchantmentKeywordCatalog
                 return new EnchantmentKeywordCatalog(discovered);
             }
 
-            log("EnchantmentKeywordCatalog: dynamic discovery returned no keywords, using fallback keywords");
+            return FromFallback(log, "dynamic discovery returned no keywords");
         }
         catch (Exception ex)
         {
-            log($"EnchantmentKeywordCatalog: dynamic discovery failed, using fallback keywords: {ex.Message}");
+            return FromFallback(log, $"dynamic discovery failed: {ex.Message}");
         }
-
-        return FromKeywords(FallbackKeywords, log);
     }
 
     public static EnchantmentKeywordCatalog FromKeywords(IEnumerable<string> keywords, Action<string> log)
@@ -41,10 +39,16 @@ public sealed class EnchantmentKeywordCatalog
         var normalized = Normalize(keywords);
         if (normalized.Count == 0)
         {
-            normalized = Normalize(FallbackKeywords);
-            log($"EnchantmentKeywordCatalog: using {normalized.Count} fallback keywords");
+            return FromFallback(log, "no normalized keywords remain");
         }
 
+        return new EnchantmentKeywordCatalog(normalized);
+    }
+
+    private static EnchantmentKeywordCatalog FromFallback(Action<string> log, string reason)
+    {
+        var normalized = Normalize(FallbackKeywords);
+        log($"EnchantmentKeywordCatalog: using {normalized.Count} fallback keywords ({reason})");
         return new EnchantmentKeywordCatalog(normalized);
     }
 
