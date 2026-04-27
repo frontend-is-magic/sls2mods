@@ -1,28 +1,57 @@
 using BaseLib.Config;
+using BaseLib.Config.UI;
+using BaseLib.Utils;
+using Godot;
+using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
+using Sls2Mods.Utils.Config;
 
 namespace CardRewardEnchantments.Features.CardRewards;
 
-public sealed class CardRewardEnchantConfigMenu : SimpleModConfig
+public sealed partial class CardRewardEnchantConfigMenu : SimpleModConfig
 {
+    private static readonly KeywordBlacklistState BlacklistState = new();
+
+    private readonly IReadOnlyList<string> _keywords;
+    private readonly CardRewardEnchantConfig? _fallback;
+    private readonly Action<CardRewardEnchantConfig>? _persist;
+
+    public CardRewardEnchantConfigMenu(
+        IEnumerable<string>? keywords = null,
+        CardRewardEnchantConfig? fallback = null,
+        Action<CardRewardEnchantConfig>? persist = null)
+    {
+        _keywords = KeywordBlacklistState.Normalize(keywords ?? Array.Empty<string>());
+        _fallback = fallback;
+        _persist = persist;
+        if (_persist != null)
+        {
+            ConfigChanged += OnConfigChanged;
+        }
+    }
+
     public static bool Enabled { get; set; } = true;
 
     [ConfigSlider(0.0, 100.0, 0.1, Format = "{0:0.0}%")]
     public static double EnchantChancePercent { get; set; } = 100.0;
 
-    public static bool BlacklistInnate { get; set; }
+    public static bool LogRolls { get; set; } = true;
 
-    public static bool BlacklistRetain { get; set; }
+    public override void SetupConfigUI(Control optionContainer)
+    {
+        GenerateOptionsForAllProperties(optionContainer);
+        AddKeywordBlacklistOptions(optionContainer);
+        AddRestoreDefaultsButton(optionContainer);
+        SetupFocusNeighbors(optionContainer);
+    }
 
-    public static bool BlacklistEthereal { get; set; }
-
-    public static void InitializeFrom(CardRewardEnchantConfig config)
+    public static void InitializeFrom(CardRewardEnchantConfig config, IEnumerable<string>? keywords = null)
     {
         var normalized = config.Normalize();
         Enabled = normalized.Enabled;
         EnchantChancePercent = normalized.EnchantChance * 100.0;
-        BlacklistInnate = normalized.BlacklistedKeywords.Contains("innate", StringComparer.OrdinalIgnoreCase);
-        BlacklistRetain = normalized.BlacklistedKeywords.Contains("retain", StringComparer.OrdinalIgnoreCase);
-        BlacklistEthereal = normalized.BlacklistedKeywords.Contains("ethereal", StringComparer.OrdinalIgnoreCase);
+        LogRolls = normalized.LogRolls;
+        BlacklistState.Initialize(keywords ?? normalized.BlacklistedKeywords, normalized.BlacklistedKeywords);
     }
 
     public static CardRewardEnchantConfig ToRuntimeConfig(CardRewardEnchantConfig? fallback = null)
@@ -30,29 +59,37 @@ public sealed class CardRewardEnchantConfigMenu : SimpleModConfig
         fallback ??= new CardRewardEnchantConfig();
         fallback.Enabled = Enabled;
         fallback.EnchantChance = PercentToProbability(EnchantChancePercent);
-        fallback.BlacklistedKeywords = BuildBlacklist();
+        fallback.LogRolls = LogRolls;
+        fallback.BlacklistedKeywords = BlacklistState.ToBlacklist();
         return fallback.Normalize();
     }
 
-    private static List<string> BuildBlacklist()
+    public static bool IsKeywordBlacklisted(string keyword)
     {
-        var blacklist = new List<string>();
-        if (BlacklistInnate)
+        return BlacklistState.IsBlacklisted(keyword);
+    }
+
+    private void AddKeywordBlacklistOptions(Control optionContainer)
+    {
+        if (_keywords.Count == 0)
         {
-            blacklist.Add("innate");
+            return;
         }
 
-        if (BlacklistRetain)
-        {
-            blacklist.Add("retain");
-        }
+        var section = CreateCollapsibleSection("Enchantment blacklist", collapsedByDefault: true);
+        optionContainer.AddChild(section, forceReadableName: false, Node.InternalMode.Disabled);
 
-        if (BlacklistEthereal)
+        foreach (var keyword in _keywords)
         {
-            blacklist.Add("ethereal");
+            var tickbox = new NConfigKeywordTickbox(keyword, BlacklistState, Changed);
+            var label = CreateRawLabelControl(keyword, 28);
+            var row = new NConfigOptionRow(ModPrefix, $"Blacklist {keyword}", label, tickbox)
+            {
+                UniqueNameInOwner = true,
+                Owner = optionContainer
+            };
+            section.ContentContainer.AddChild(row, forceReadableName: false, Node.InternalMode.Disabled);
         }
-
-        return blacklist;
     }
 
     private static double PercentToProbability(double percent)
@@ -63,5 +100,50 @@ public sealed class CardRewardEnchantConfigMenu : SimpleModConfig
         }
 
         return Math.Clamp(percent, 0, 100) / 100.0;
+    }
+
+    private void OnConfigChanged(object? sender, EventArgs args)
+    {
+        var config = ToRuntimeConfig(_fallback);
+        _persist?.Invoke(config);
+    }
+
+    private sealed partial class NConfigKeywordTickbox : NTickbox
+    {
+        private readonly string _keyword;
+        private readonly KeywordBlacklistState _state;
+        private readonly Action _onChanged;
+
+        public NConfigKeywordTickbox(string keyword, KeywordBlacklistState state, Action onChanged)
+        {
+            _keyword = keyword;
+            _state = state;
+            _onChanged = onChanged;
+            CustomMinimumSize = new Vector2(324f, 64f);
+            SizeFlagsHorizontal = SizeFlags.ShrinkEnd;
+            SizeFlagsVertical = SizeFlags.Fill;
+            FocusMode = FocusModeEnum.All;
+            MouseFilter = MouseFilterEnum.Pass;
+            this.TransferAllNodes(SceneHelper.GetScenePath("screens/settings_tickbox"));
+        }
+
+        public override void _Ready()
+        {
+            ConnectSignals();
+            IsTicked = _state.IsBlacklisted(_keyword);
+            Toggled += OnToggled;
+        }
+
+        public override void _ExitTree()
+        {
+            Toggled -= OnToggled;
+            base._ExitTree();
+        }
+
+        private void OnToggled(NTickbox tickbox)
+        {
+            _state.SetBlacklisted(_keyword, tickbox.IsTicked);
+            _onChanged();
+        }
     }
 }

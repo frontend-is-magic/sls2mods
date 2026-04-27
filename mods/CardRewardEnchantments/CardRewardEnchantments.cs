@@ -11,26 +11,31 @@ namespace CardRewardEnchantments;
 public static class CardRewardEnchantments
 {
     private const string ModId = "CardRewardEnchantments";
+    private const string ConfigFileName = "CardRewardEnchantmentsConfig.json";
     private const int SupportedSchemaVersion = 1;
 
     public static void ModLoaded()
     {
         var config = ModConfigLoader.LoadOrCreate(
             ModId,
-            "CardRewardEnchantmentsConfig.json",
+            ConfigFileName,
             SupportedSchemaVersion,
             () => new CardRewardEnchantConfig(),
             item => item.Normalize(),
             LogInfo);
 
-        CardRewardEnchantConfigMenu.InitializeFrom(config);
+        var catalog = EnchantmentKeywordCatalog.Create(LogInfo);
+        CardRewardEnchantConfigMenu.InitializeFrom(config, catalog.Keywords);
         Func<CardRewardEnchantConfig> getConfig = () => config;
-        if (ModConfigMenuRegistrar.TryRegister(ModId, new CardRewardEnchantConfigMenu(), LogInfo))
+        var menu = new CardRewardEnchantConfigMenu(
+            catalog.Keywords,
+            config,
+            runtimeConfig => ModConfigLoader.Save(ModConfigLoader.DefaultConfigPath(ConfigFileName), runtimeConfig));
+        if (ModConfigMenuRegistrar.TryRegister(ModId, menu, LogInfo))
         {
             getConfig = () => CardRewardEnchantConfigMenu.ToRuntimeConfig(config);
         }
 
-        var catalog = EnchantmentKeywordCatalog.Create(LogInfo);
         var adapter = new CardRewardAdapter();
         var service = new CardRewardEnchantService(getConfig, catalog, adapter, LogInfo);
         CardRewardEnchantInstaller.Install(new Harmony(ModId), service, adapter, LogInfo);

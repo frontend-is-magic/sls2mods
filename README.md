@@ -47,10 +47,10 @@
    - 如果目标目录里已有同名 `.dll` 或 `.json`，脚本会覆盖它们。
    - 脚本还会尝试删除目标 mod 目录里的旧 `.pck` 和旧同名配置文件，避免旧安装残留影响加载。
 
-7. 添加 `VakuuRoomInjection` 时的额外处理。
-   - 作用：如果 `%APPDATA%\SlayTheSpire2\mod_configs\VakuuRoomInjectionConfig.json` 不存在，脚本会创建配置目录并初始化配置文件。
-   - 如果旧配置 `%APPDATA%\SlayTheSpire2\mod_configs\MapNodeChangerConfig.json` 存在，脚本会复制它作为新配置。
-   - 如果旧配置不存在，脚本会从 `mods\VakuuRoomInjection\VakuuRoomInjectionConfig.json.example` 复制默认配置。
+7. 添加 mod 时的配置初始化。
+   - 作用：如果 `%APPDATA%\SlayTheSpire2\mod_configs\<ModName>Config.json` 不存在，且仓库里存在 `mods\<ModName>\<ModName>Config.json.example`，脚本会创建配置目录并初始化配置文件。
+   - 这个目录与 BaseLib/Godot 的用户数据配置目录保持一致。
+   - 安装 `VakuuRoomInjection` 时，如果旧配置 `%APPDATA%\SlayTheSpire2\mod_configs\MapNodeChangerConfig.json` 存在，脚本会复制它作为新配置。
    - 脚本会删除旧安装目录 `<Slay the Spire 2>\mods\MapNodeChanger`，这是从旧 mod 名迁移到 `VakuuRoomInjection` 的清理步骤。
 
 8. 删除 mod。
@@ -86,8 +86,8 @@ Use the `Change game folder` menu option when the game is moved or when you sele
 - 删除 `<Slay the Spire 2>\mods\<ModName>\<ModName>.pck`，如果它存在。
 - 删除 `<Slay the Spire 2>\mods\<ModName>\<ModName>Config.json`，如果它存在。
 - 删除玩家在 `Remove mod` 菜单里选择的整个 mod 文件夹。
-- 安装 `VakuuRoomInjection` 时，可能创建 `%APPDATA%\SlayTheSpire2\mod_configs`。
-- 安装 `VakuuRoomInjection` 时，可能创建 `%APPDATA%\SlayTheSpire2\mod_configs\VakuuRoomInjectionConfig.json`。
+- 安装带有 `<ModName>Config.json.example` 的 mod 时，可能创建 `%APPDATA%\SlayTheSpire2\mod_configs`。
+- 安装带有 `<ModName>Config.json.example` 的 mod 时，可能创建 `%APPDATA%\SlayTheSpire2\mod_configs\<ModName>Config.json`。
 - 安装 `VakuuRoomInjection` 时，可能删除旧目录 `<Slay the Spire 2>\mods\MapNodeChanger`。
 
 最需要注意的是删除功能：选择 `Remove mod` 后，脚本会直接删除所选 mod 文件夹。运行删除前请确认选中的 mod 名称正确。

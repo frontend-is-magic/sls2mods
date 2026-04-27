@@ -35,9 +35,10 @@ public sealed class CardRewardEnchantConfigTests
     {
         CardRewardEnchantConfigMenu.Enabled = true;
         CardRewardEnchantConfigMenu.EnchantChancePercent = 100.0;
-        CardRewardEnchantConfigMenu.BlacklistInnate = true;
-        CardRewardEnchantConfigMenu.BlacklistRetain = false;
-        CardRewardEnchantConfigMenu.BlacklistEthereal = true;
+        CardRewardEnchantConfigMenu.LogRolls = true;
+        CardRewardEnchantConfigMenu.InitializeFrom(
+            new CardRewardEnchantConfig { BlacklistedKeywords = new List<string> { "innate", "ethereal" } },
+            new[] { "innate", "retain", "ethereal" });
 
         var config = CardRewardEnchantConfigMenu.ToRuntimeConfig();
 
@@ -53,7 +54,7 @@ public sealed class CardRewardEnchantConfigTests
             EnchantChance = 0.25,
             BlacklistedKeywords = new List<string> { " Retain ", "ethereal" },
             LogRolls = false
-        });
+        }, new[] { "adroit", "retain", "ethereal" });
 
         var config = CardRewardEnchantConfigMenu.ToRuntimeConfig(new CardRewardEnchantConfig { LogRolls = false });
 
@@ -61,6 +62,24 @@ public sealed class CardRewardEnchantConfigTests
         Assert.Equal(0.25, config.EnchantChance);
         Assert.Equal(new[] { "ethereal", "retain" }, config.BlacklistedKeywords);
         Assert.False(config.LogRolls);
+    }
+
+    [Fact]
+    public void MenuInitializesDynamicKeywordBlacklist()
+    {
+        CardRewardEnchantConfigMenu.InitializeFrom(
+            new CardRewardEnchantConfig
+            {
+                BlacklistedKeywords = new List<string> { "swift", "vigorous" }
+            },
+            new[] { "adroit", "swift", "vigorous" });
+
+        var config = CardRewardEnchantConfigMenu.ToRuntimeConfig();
+
+        Assert.False(CardRewardEnchantConfigMenu.IsKeywordBlacklisted("adroit"));
+        Assert.True(CardRewardEnchantConfigMenu.IsKeywordBlacklisted("swift"));
+        Assert.True(CardRewardEnchantConfigMenu.IsKeywordBlacklisted("vigorous"));
+        Assert.Equal(new[] { "swift", "vigorous" }, config.BlacklistedKeywords);
     }
 
     [Fact]
@@ -106,8 +125,7 @@ public sealed class CardRewardEnchantConfigTests
     {
         CardRewardEnchantConfigMenu.Enabled = true;
         CardRewardEnchantConfigMenu.EnchantChancePercent = 100.0;
-        CardRewardEnchantConfigMenu.BlacklistInnate = false;
-        CardRewardEnchantConfigMenu.BlacklistRetain = false;
-        CardRewardEnchantConfigMenu.BlacklistEthereal = false;
+        CardRewardEnchantConfigMenu.LogRolls = true;
+        CardRewardEnchantConfigMenu.InitializeFrom(new CardRewardEnchantConfig(), Array.Empty<string>());
     }
 }

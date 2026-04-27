@@ -53,6 +53,40 @@ public sealed class SharedUtilsTests
     }
 
     [Fact]
+    public void KeywordBlacklistStateNormalizesAndTracksKeywords()
+    {
+        var state = new KeywordBlacklistState();
+
+        state.Initialize(
+            new[] { " Swift ", "adroit", "swift", "" },
+            new[] { "SWIFT" });
+
+        Assert.Equal(new[] { "adroit", "swift" }, state.Keywords);
+        Assert.True(state.IsBlacklisted("swift"));
+        Assert.False(state.IsBlacklisted("adroit"));
+
+        state.SetBlacklisted("adroit", true);
+
+        Assert.Equal(new[] { "adroit", "swift" }, state.ToBlacklist());
+    }
+
+    [Fact]
+    public void ModConfigLoaderCanSaveConfigExplicitly()
+    {
+        using var tempRoot = TempConfigRoot.Create();
+
+        ModConfigLoader.Save(
+            tempRoot.Path,
+            "SavedConfig.json",
+            new ExampleConfig { SchemaVersion = 3, Value = 8 });
+
+        var saved = File.ReadAllText(Path.Combine(tempRoot.Path, "SavedConfig.json"));
+
+        Assert.Contains("\"schema_version\"", saved);
+        Assert.Contains("\"value\"", saved);
+    }
+
+    [Fact]
     public void ModConfigLoaderFallsBackForUnsupportedSchema()
     {
         using var tempRoot = TempConfigRoot.Create();

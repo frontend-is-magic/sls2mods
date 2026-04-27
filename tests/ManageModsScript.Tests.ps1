@@ -36,7 +36,9 @@ Assert-True ($script.Contains(":add_mod")) "Script should implement add mod flow
 Assert-True ($script.Contains(":remove_mod")) "Script should implement remove mod flow."
 Assert-True ($script.Contains("for /d %%A in (`"mods\*`")")) "Script should discover mods from this repository's mods directory."
 Assert-True ($script.Contains("dist\%%~nxA.dll")) "Script should install built mod DLLs from each mod's dist directory."
-Assert-True ($script.Contains("%APPDATA%\SlayTheSpire2\mod_configs")) "Script should initialize the VakuuRoomInjection config directory."
+Assert-True ($script.Contains("%APPDATA%\SlayTheSpire2\mod_configs")) "Script should initialize the BaseLib mod config directory."
+Assert-True ($script.Contains(":init_mod_config")) "Script should initialize config for any installed mod with a config example."
+Assert-True ($script.Contains("%MOD_ID%Config.json.example")) "Script should discover each mod's example config by mod id."
 Assert-True ($script.Contains("OLD_TARGET_DIR")) "Script should clean up the old MapNodeChanger install directory when installing VakuuRoomInjection."
 
 $readme = Get-Content -Raw -Path $readmePath
