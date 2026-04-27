@@ -146,11 +146,26 @@ set "MOD_COUNT=0"
 echo.
 echo Available mods:
 for /d %%A in ("mods\*") do (
+    call :ensure_repo_mod_built "%%~fA" "%%~nxA"
     if exist "%%A\dist\%%~nxA.dll" if exist "%%A\dist\%%~nxA.json" (
         set /a MOD_COUNT+=1
         set "MOD_!MOD_COUNT!=%%~nxA"
         echo !MOD_COUNT!. %%~nxA
     )
+)
+exit /b 0
+
+:ensure_repo_mod_built
+set "REPO_MOD_DIR=%~1"
+set "REPO_MOD_ID=%~2"
+if exist "%REPO_MOD_DIR%\dist\%REPO_MOD_ID%.dll" if exist "%REPO_MOD_DIR%\dist\%REPO_MOD_ID%.json" exit /b 0
+if not exist "%REPO_MOD_DIR%\build.ps1" exit /b 0
+
+echo Building %REPO_MOD_ID%...
+"%POWERSHELL_EXE%" -NoProfile -ExecutionPolicy Bypass -File "%REPO_MOD_DIR%\build.ps1" -GameDir "!GAME_DIR!"
+if errorlevel 1 (
+    echo Could not build %REPO_MOD_ID%. It will not be listed until its dist files exist.
+    exit /b 1
 )
 exit /b 0
 
