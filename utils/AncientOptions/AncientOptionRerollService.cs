@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Random;
+using Sls2Mods.Utils.Randoming;
 
 namespace Sls2Mods.Utils.AncientOptions;
 
@@ -35,25 +36,10 @@ public sealed class AncientOptionRerollService
 
         var runSeed = ancientEvent.Owner?.RunState.Rng.Seed ?? 0;
         var playerId = ancientEvent.Owner?.NetId ?? 0;
-        var seed = DeterministicSeed($"{ancientEvent.Id}|run={runSeed}|player={playerId}|{request.SeedMaterial}");
+        var seed = DeterministicSeed.FromString($"{ancientEvent.Id}|run={runSeed}|player={playerId}|{request.SeedMaterial}");
         rerollRng = new Rng(seed);
         _log($"AncientOptionReroll: applying reroll for {ancientEvent.Id} seed={seed} material={request.SeedMaterial}");
         return true;
-    }
-
-    private static uint DeterministicSeed(string value)
-    {
-        unchecked
-        {
-            uint hash = 2166136261;
-            foreach (var ch in value)
-            {
-                hash ^= ch;
-                hash *= 16777619;
-            }
-
-            return hash;
-        }
     }
 
     private sealed record RerollRequest(string SeedMaterial);
