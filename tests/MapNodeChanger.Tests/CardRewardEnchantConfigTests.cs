@@ -45,6 +45,25 @@ public sealed class CardRewardEnchantConfigTests
     }
 
     [Fact]
+    public void MenuCanInitializeFromJsonConfig()
+    {
+        CardRewardEnchantConfigMenu.InitializeFrom(new CardRewardEnchantConfig
+        {
+            Enabled = false,
+            EnchantChance = 0.25,
+            BlacklistedKeywords = new List<string> { " Retain ", "ethereal" },
+            LogRolls = false
+        });
+
+        var config = CardRewardEnchantConfigMenu.ToRuntimeConfig(new CardRewardEnchantConfig { LogRolls = false });
+
+        Assert.False(config.Enabled);
+        Assert.Equal(0.25, config.EnchantChance);
+        Assert.Equal(new[] { "ethereal", "retain" }, config.BlacklistedKeywords);
+        Assert.False(config.LogRolls);
+    }
+
+    [Fact]
     public void RuntimeConfigNormalizeClampsAndDeduplicates()
     {
         var config = new CardRewardEnchantConfig

@@ -15,6 +15,16 @@ public sealed class CardRewardEnchantConfigMenu : SimpleModConfig
 
     public static bool BlacklistEthereal { get; set; }
 
+    public static void InitializeFrom(CardRewardEnchantConfig config)
+    {
+        var normalized = config.Normalize();
+        Enabled = normalized.Enabled;
+        EnchantChancePercent = normalized.EnchantChance * 100.0;
+        BlacklistInnate = normalized.BlacklistedKeywords.Contains("innate", StringComparer.OrdinalIgnoreCase);
+        BlacklistRetain = normalized.BlacklistedKeywords.Contains("retain", StringComparer.OrdinalIgnoreCase);
+        BlacklistEthereal = normalized.BlacklistedKeywords.Contains("ethereal", StringComparer.OrdinalIgnoreCase);
+    }
+
     public static CardRewardEnchantConfig ToRuntimeConfig(CardRewardEnchantConfig? fallback = null)
     {
         fallback ??= new CardRewardEnchantConfig();

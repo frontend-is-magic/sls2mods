@@ -104,11 +104,10 @@ public sealed class CardRewardAdapter : ICardRewardEnchantAdapter
         }
     }
 
-    public string BuildRewardKey(object instance, object? result)
+    public string BuildRewardKey(IEnumerable<object> cards)
     {
-        var instancePart = SafeHash(instance);
-        var resultPart = result == null ? "void" : SafeHash(result);
-        return $"{instance.GetType().FullName}|instance={instancePart}|result={resultPart}";
+        var cardParts = cards.Select(BuildCardKey);
+        return $"CardReward|cards={string.Join(",", cardParts)}";
     }
 
     private static bool TryApplyWithCardMethod(object card, string keyword, out string failureReason)
@@ -130,15 +129,37 @@ public sealed class CardRewardAdapter : ICardRewardEnchantAdapter
         return true;
     }
 
-    private static string SafeHash(object value)
+    private static string BuildCardKey(object card)
+    {
+        var type = card.GetType();
+        var id = TryReadStableValue(card, "Id")
+            ?? TryReadStableValue(card, "ID")
+            ?? TryReadStableValue(card, "ModelId")
+            ?? TryReadStableValue(card, "Name")
+            ?? TryReadStableValue(card, "Title")
+            ?? type.FullName
+            ?? type.Name;
+        return $"{type.FullName}:{id}";
+    }
+
+    private static string? TryReadStableValue(object value, string memberName)
     {
         try
         {
-            return value.GetHashCode().ToString("X");
+            var type = value.GetType();
+            var property = type.GetProperty(memberName, BindingFlags.Public | BindingFlags.Instance);
+            var propertyValue = property?.GetValue(value);
+            if (propertyValue != null)
+            {
+                return propertyValue.ToString();
+            }
+
+            var field = type.GetField(memberName, BindingFlags.Public | BindingFlags.Instance);
+            return field?.GetValue(value)?.ToString();
         }
         catch
         {
-            return "unknown";
+            return null;
         }
     }
 }

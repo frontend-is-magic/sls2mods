@@ -34,28 +34,65 @@ public static class CardRewardEnchantInstaller
 
     public static void Postfix(CardReward __instance, Task __result)
     {
-        var service = _service;
-        var adapter = _adapter;
-        if (service == null || adapter == null)
+        try
+        {
+            var service = _service;
+            var adapter = _adapter;
+            if (service == null || adapter == null)
+            {
+                return;
+            }
+
+            if (!__result.IsCompletedSuccessfully)
+            {
+                _ = __result.ContinueWith(
+                    task => ApplyAfterPopulate(__instance, task, service, adapter),
+                    TaskScheduler.Default);
+                return;
+            }
+
+            ApplyAfterPopulate(__instance, __result, service, adapter);
+        }
+        catch
         {
             return;
         }
+    }
 
-        // Current STS2 CardReward.Populate builds Cards synchronously and returns
-        // Task.CompletedTask. If a future build makes it asynchronous, fail closed
-        // here instead of mutating a partially populated reward.
-        if (!__result.IsCompletedSuccessfully)
+    private static void ApplyAfterPopulate(
+        CardReward reward,
+        Task populateTask,
+        CardRewardEnchantService service,
+        CardRewardAdapter adapter)
+    {
+        try
+        {
+            if (!populateTask.IsCompletedSuccessfully)
+            {
+                return;
+            }
+
+            Apply(reward, populateTask, service, adapter);
+        }
+        catch
         {
             return;
         }
+    }
 
-        var cards = adapter.ExtractRewardCards(__instance, __result).ToList();
+    private static void Apply(
+        CardReward reward,
+        Task populateTask,
+        CardRewardEnchantService service,
+        CardRewardAdapter adapter)
+    {
+        var cards = adapter.ExtractRewardCards(reward, populateTask).ToList();
         if (cards.Count == 0)
         {
             return;
         }
 
-        var rewardKey = adapter.BuildRewardKey(__instance, __result);
+        var rewardKey = adapter.BuildRewardKey(cards);
         var seed = DeterministicSeed.FromString($"CardRewardEnchantments|{rewardKey}");
         service.ApplyToRewardCards(cards, new Random(unchecked((int)seed)), rewardKey);
     }

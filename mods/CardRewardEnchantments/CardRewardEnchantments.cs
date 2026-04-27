@@ -23,6 +23,7 @@ public static class CardRewardEnchantments
             item => item.Normalize(),
             LogInfo);
 
+        CardRewardEnchantConfigMenu.InitializeFrom(config);
         Func<CardRewardEnchantConfig> getConfig = () => config;
         if (ModConfigMenuRegistrar.TryRegister(ModId, new CardRewardEnchantConfigMenu(), LogInfo))
         {

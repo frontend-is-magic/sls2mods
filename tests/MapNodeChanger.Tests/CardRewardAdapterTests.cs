@@ -72,19 +72,31 @@ public sealed class CardRewardAdapterTests
     }
 
     [Fact]
-    public void BuildRewardKeyDoesNotThrowForNullResult()
+    public void BuildRewardKeyUsesStableCardContent()
     {
         var adapter = new CardRewardAdapter();
 
-        var key = adapter.BuildRewardKey(new object(), null);
+        var first = adapter.BuildRewardKey(new object[] { new CardWithId("strike"), new CardWithId("defend") });
+        var second = adapter.BuildRewardKey(new object[] { new CardWithId("strike"), new CardWithId("defend") });
 
-        Assert.Contains("System.Object", key);
-        Assert.Contains("result=void", key);
+        Assert.Equal(first, second);
+        Assert.Contains("strike", first);
+        Assert.Contains("defend", first);
     }
 
     private sealed class ThrowingSingleEnchantmentCard
     {
         public string? Enchantment => throw new InvalidOperationException("getter failed");
+    }
+
+    private sealed class CardWithId
+    {
+        public CardWithId(string id)
+        {
+            Id = id;
+        }
+
+        public string Id { get; }
     }
 
     private sealed class ThrowingCollectionEnchantmentCard
