@@ -95,8 +95,11 @@ Use the `Change game folder` menu option when the game is moved or when you sele
 ## 当前包含的 mod
 
 - `mods\VakuuRoomInjection`
+- `mods\CardRewardEnchantments`
 
 `VakuuRoomInjection` 会在进入房间时按配置概率注入指定 Ancient 事件。默认目标是 Vakuu，详细行为和开发说明见 `mods\VakuuRoomInjection\README.md`。
+
+`CardRewardEnchantments` 会在获得卡牌奖励时按配置概率为可附魔卡牌添加随机附魔。默认概率为 100%，附魔关键词黑名单可在游戏内菜单中用复选框配置，详细行为和开发说明见 `mods\CardRewardEnchantments\README.md`。
 
 ## 手动安装说明
 
@@ -111,6 +114,8 @@ Use the `Change game folder` menu option when the game is moved or when you sele
 ```text
 mods\VakuuRoomInjection\dist\VakuuRoomInjection.dll
 mods\VakuuRoomInjection\dist\VakuuRoomInjection.json
+mods\CardRewardEnchantments\dist\CardRewardEnchantments.dll
+mods\CardRewardEnchantments\dist\CardRewardEnchantments.json
 ```
 
 复制到：
@@ -125,6 +130,12 @@ mods\VakuuRoomInjection\dist\VakuuRoomInjection.json
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\mods\VakuuRoomInjection\build.ps1
+```
+
+构建 `CardRewardEnchantments`：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\mods\CardRewardEnchantments\build.ps1
 ```
 
 运行验证：

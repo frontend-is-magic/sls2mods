@@ -16,11 +16,25 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\mods\VakuuRoomInjection\VakuuRoomInjection.csproj" />
+    <Reference Include="0Harmony">
+      <HintPath>$(Sts2DataDir)\0Harmony.dll</HintPath>
+    </Reference>
     <Reference Include="BaseLib">
       <HintPath>$(BaseLibDir)\BaseLib.dll</HintPath>
     </Reference>
     <Reference Include="sts2">
       <HintPath>$(Sts2DataDir)\sts2.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      CardRewardEnchantments uses Godot.NET.Sdk, whose ProjectReference target
+      framework discovery fails in this test project via GetTargetFrameworks
+      without actionable diagnostics. Include the small config/menu surface
+      directly so these unit tests can run under Microsoft.NET.Sdk, and verify
+      the real mod project with an explicit dotnet build.
+    -->
+    <Compile Include="..\..\mods\CardRewardEnchantments\Features\CardRewards\*.cs" LinkBase="CardRewardEnchantments\Features\CardRewards" />
   </ItemGroup>
 </Project>
