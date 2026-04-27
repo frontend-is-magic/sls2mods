@@ -37,16 +37,19 @@ public sealed class CardRewardAdapterTests
     }
 
     [Fact]
-    public void TryApplyEnchantmentDoesNotUseCardCmdReflectionPath()
+    public void TryApplyEnchantmentUsesRealCardCmdApiPath()
     {
         var source = File.ReadAllText(FindRepoFile("mods/CardRewardEnchantments/Features/CardRewards/CardRewardAdapter.cs"));
 
-        Assert.DoesNotContain("CardCmd", source);
-        Assert.DoesNotContain("ModelDb", source);
+        Assert.Contains("CardCmd.Enchant", source);
+        Assert.Contains("ModelDb.GetById<EnchantmentModel>", source);
+        Assert.Contains("ModelId.SlugifyCategory<EnchantmentModel>()", source);
+        Assert.Contains("keyword.ToUpperInvariant()", source);
+        Assert.Contains("CanEnchant", source);
     }
 
     [Fact]
-    public void TryApplyEnchantmentUsesSimpleCardLocalStringMethod()
+    public void TryApplyEnchantmentKeepsSimpleCardLocalStringFallback()
     {
         var adapter = new CardRewardAdapter();
         var card = new CardWithLocalMethod();
@@ -56,6 +59,27 @@ public sealed class CardRewardAdapterTests
         Assert.True(applied);
         Assert.Equal("adroit", card.Enchantment);
         Assert.Equal(string.Empty, failureReason);
+    }
+
+    [Fact]
+    public void ExtractRewardCardsFailsClosedForIncompatibleObjects()
+    {
+        var adapter = new CardRewardAdapter();
+
+        var cards = adapter.ExtractRewardCards(new object(), Task.CompletedTask);
+
+        Assert.Empty(cards);
+    }
+
+    [Fact]
+    public void BuildRewardKeyDoesNotThrowForNullResult()
+    {
+        var adapter = new CardRewardAdapter();
+
+        var key = adapter.BuildRewardKey(new object(), null);
+
+        Assert.Contains("System.Object", key);
+        Assert.Contains("result=void", key);
     }
 
     private sealed class ThrowingSingleEnchantmentCard

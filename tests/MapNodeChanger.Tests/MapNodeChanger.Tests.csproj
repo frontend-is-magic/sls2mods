@@ -16,6 +16,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\mods\VakuuRoomInjection\VakuuRoomInjection.csproj" />
+    <Reference Include="0Harmony">
+      <HintPath>$(Sts2DataDir)\0Harmony.dll</HintPath>
+    </Reference>
     <Reference Include="BaseLib">
       <HintPath>$(BaseLibDir)\BaseLib.dll</HintPath>
     </Reference>
