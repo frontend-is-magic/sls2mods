@@ -24,8 +24,9 @@ public sealed class CardRewardEnchantConfig : IModConfig
     public CardRewardEnchantConfig Normalize()
     {
         EnchantChance = Clamp01(EnchantChance);
-        BlacklistedKeywords = BlacklistedKeywords
-            .Select(keyword => keyword.Trim().ToLowerInvariant())
+        BlacklistedKeywords = (BlacklistedKeywords ?? new List<string>())
+            .Where(keyword => keyword is not null)
+            .Select(keyword => keyword!.Trim().ToLowerInvariant())
             .Where(keyword => !string.IsNullOrWhiteSpace(keyword))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(keyword => keyword, StringComparer.Ordinal)
