@@ -224,7 +224,8 @@ exit /b 0
 :init_mod_config
 set "CONFIG_DIR=%APPDATA%\SlayTheSpire2\mod_configs"
 set "CONFIG_PATH=%CONFIG_DIR%\%MOD_ID%Config.json"
-set "EXAMPLE_CONFIG=%SCRIPT_DIR%mods\%MOD_ID%\%MOD_ID%Config.json.example"
+set "EXAMPLE_CONFIG=%DIST_DIR%\%MOD_ID%Config.json.example"
+if not exist "%EXAMPLE_CONFIG%" set "EXAMPLE_CONFIG=%SCRIPT_DIR%mods\%MOD_ID%\%MOD_ID%Config.json.example"
 
 if not exist "%CONFIG_DIR%" mkdir "%CONFIG_DIR%"
 if exist "%CONFIG_PATH%" exit /b 0
