@@ -95,7 +95,8 @@ public sealed class CardRewardAdapter : ICardRewardEnchantAdapter
                     return false;
                 }
 
-                CardCmd.Enchant(enchantment, cardModel, 1m);
+                var amount = EnchantmentAmountCatalog.GetAmount(definition.Keyword);
+                CardCmd.Enchant(enchantment, cardModel, amount);
                 failureReason = string.Empty;
                 return true;
             }
