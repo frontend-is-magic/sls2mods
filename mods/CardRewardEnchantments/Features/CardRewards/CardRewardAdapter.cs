@@ -12,7 +12,9 @@ public interface ICardRewardEnchantAdapter
 {
     bool HasEnchantment(object card);
 
-    bool TryApplyEnchantment(object card, string keyword, out string failureReason);
+    bool CanEnchant(object card, EnchantmentDefinition definition, out string failureReason);
+
+    bool TryApplyEnchantment(object card, EnchantmentDefinition definition, out string failureReason);
 }
 
 public sealed class CardRewardAdapter : ICardRewardEnchantAdapter
@@ -42,7 +44,39 @@ public sealed class CardRewardAdapter : ICardRewardEnchantAdapter
         }
     }
 
+    public bool CanEnchant(object card, EnchantmentDefinition definition, out string failureReason)
+    {
+        try
+        {
+            if (card is not CardModel cardModel)
+            {
+                failureReason = string.Empty;
+                return true;
+            }
+
+            var enchantment = CreateEnchantment(definition);
+            if (!enchantment.CanEnchant(cardModel))
+            {
+                failureReason = $"{definition.Keyword} cannot enchant this card";
+                return false;
+            }
+
+            failureReason = string.Empty;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            failureReason = ex.InnerException?.Message ?? ex.Message;
+            return false;
+        }
+    }
+
     public bool TryApplyEnchantment(object card, string keyword, out string failureReason)
+    {
+        return TryApplyEnchantment(card, new EnchantmentDefinition(keyword), out failureReason);
+    }
+
+    public bool TryApplyEnchantment(object card, EnchantmentDefinition definition, out string failureReason)
     {
         try
         {
@@ -54,13 +88,10 @@ public sealed class CardRewardAdapter : ICardRewardEnchantAdapter
                     return false;
                 }
 
-                var modelId = new ModelId(
-                    ModelId.SlugifyCategory<EnchantmentModel>(),
-                    keyword.ToUpperInvariant());
-                var enchantment = ModelDb.GetById<EnchantmentModel>(modelId).ToMutable();
+                var enchantment = CreateEnchantment(definition);
                 if (!enchantment.CanEnchant(cardModel))
                 {
-                    failureReason = $"{keyword} cannot enchant this card";
+                    failureReason = $"{definition.Keyword} cannot enchant this card";
                     return false;
                 }
 
@@ -69,7 +100,7 @@ public sealed class CardRewardAdapter : ICardRewardEnchantAdapter
                 return true;
             }
 
-            if (TryApplyWithCardMethod(card, keyword, out failureReason))
+            if (TryApplyWithCardMethod(card, definition.Keyword, out failureReason))
             {
                 return true;
             }
@@ -81,6 +112,52 @@ public sealed class CardRewardAdapter : ICardRewardEnchantAdapter
             failureReason = ex.InnerException?.Message ?? ex.Message;
             return false;
         }
+    }
+
+    private static EnchantmentModel CreateEnchantment(EnchantmentDefinition definition)
+    {
+        if (definition.EnchantmentType != null)
+        {
+            if (TryGetRegisteredEnchantment(definition.EnchantmentType, out var model))
+            {
+                return model.ToMutable();
+            }
+
+            if (Activator.CreateInstance(definition.EnchantmentType) is EnchantmentModel created)
+            {
+                return created;
+            }
+        }
+
+        var modelId = new ModelId(
+            ModelId.SlugifyCategory<EnchantmentModel>(),
+            definition.Keyword.ToUpperInvariant());
+        return ModelDb.GetById<EnchantmentModel>(modelId).ToMutable();
+    }
+
+    private static bool TryGetRegisteredEnchantment(Type enchantmentType, out EnchantmentModel model)
+    {
+        try
+        {
+            var method = typeof(ModelDb).GetMethod(
+                "Get",
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static,
+                binder: null,
+                types: new[] { typeof(Type) },
+                modifiers: null);
+            if (method?.Invoke(null, new object[] { enchantmentType }) is EnchantmentModel registered)
+            {
+                model = registered;
+                return true;
+            }
+        }
+        catch
+        {
+            // Some concrete enchantment classes are not registered in ModelDb.
+        }
+
+        model = null!;
+        return false;
     }
 
     public IEnumerable<object> ExtractRewardCards(object instance, object? result)

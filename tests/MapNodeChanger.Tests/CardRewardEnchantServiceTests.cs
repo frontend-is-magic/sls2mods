@@ -127,6 +127,26 @@ public sealed class CardRewardEnchantServiceTests
         Assert.Contains(logs, message => message.Contains("cannot enchant"));
     }
 
+    [Fact]
+    public void ApplyToRewardCardsRerollsFromCompatibleKeywords()
+    {
+        var logs = new List<string>();
+        var adapter = new FakeAdapter();
+        adapter.IncompatibleKeywords.Add("adroit");
+        var service = CreateService(
+            new CardRewardEnchantConfig { EnchantChance = 1.0, LogRolls = true },
+            EnchantmentKeywordCatalog.FromKeywords(new[] { "adroit", "swift" }, _ => { }),
+            adapter,
+            logs.Add);
+        var card = new RewardCard();
+
+        service.ApplyToRewardCards(new[] { card }, new Random(0), "reward-1");
+
+        Assert.Equal("swift", card.Enchantment);
+        Assert.DoesNotContain("adroit", adapter.AppliedKeywords);
+        Assert.Contains(logs, message => message.Contains("skipped adroit"));
+    }
+
     private static CardRewardEnchantService CreateService(
         CardRewardEnchantConfig config,
         EnchantmentKeywordCatalog catalog,
@@ -147,12 +167,26 @@ public sealed class CardRewardEnchantServiceTests
 
         public List<string> AppliedKeywords { get; } = new();
 
+        public HashSet<string> IncompatibleKeywords { get; } = new(StringComparer.OrdinalIgnoreCase);
+
         public bool HasEnchantment(object card)
         {
             return ((RewardCard)card).Enchantment != null;
         }
 
-        public bool TryApplyEnchantment(object card, string keyword, out string failureReason)
+        public bool CanEnchant(object card, EnchantmentDefinition definition, out string failureReason)
+        {
+            if (IncompatibleKeywords.Contains(definition.Keyword))
+            {
+                failureReason = $"{definition.Keyword} cannot enchant this card";
+                return false;
+            }
+
+            failureReason = string.Empty;
+            return true;
+        }
+
+        public bool TryApplyEnchantment(object card, EnchantmentDefinition definition, out string failureReason)
         {
             if (FailureReason != null)
             {
@@ -160,8 +194,8 @@ public sealed class CardRewardEnchantServiceTests
                 return false;
             }
 
-            ((RewardCard)card).Enchantment = keyword;
-            AppliedKeywords.Add(keyword);
+            ((RewardCard)card).Enchantment = definition.Keyword;
+            AppliedKeywords.Add(definition.Keyword);
             failureReason = string.Empty;
             return true;
         }

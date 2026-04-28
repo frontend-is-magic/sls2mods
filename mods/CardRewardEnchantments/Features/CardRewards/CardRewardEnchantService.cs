@@ -29,8 +29,8 @@ public sealed class CardRewardEnchantService
             return;
         }
 
-        var candidates = _catalog.Keywords
-            .Where(keyword => !config.BlacklistedKeywords.Contains(keyword, StringComparer.OrdinalIgnoreCase))
+        var candidates = _catalog.Definitions
+            .Where(definition => !config.BlacklistedKeywords.Contains(definition.Keyword, StringComparer.OrdinalIgnoreCase))
             .ToList();
         if (candidates.Count == 0)
         {
@@ -58,10 +58,33 @@ public sealed class CardRewardEnchantService
                 continue;
             }
 
-            var keyword = candidates[rng.Next(candidates.Count)];
-            if (!_adapter.TryApplyEnchantment(card, keyword, out var failureReason) && config.LogRolls)
+            var compatible = new List<EnchantmentDefinition>();
+            foreach (var candidate in candidates)
             {
-                _log($"CardRewardEnchant: failed to apply {keyword} to {rewardKey} cardIndex={index}: {failureReason}");
+                if (_adapter.CanEnchant(card, candidate, out var compatibilityFailure))
+                {
+                    compatible.Add(candidate);
+                }
+                else if (config.LogRolls)
+                {
+                    _log($"CardRewardEnchant: skipped {candidate.Keyword} for {rewardKey} cardIndex={index}: {compatibilityFailure}");
+                }
+            }
+            if (compatible.Count == 0)
+            {
+                if (config.LogRolls)
+                {
+                    _log($"CardRewardEnchant: no compatible enchantment keywords for {rewardKey} cardIndex={index}");
+                }
+
+                index++;
+                continue;
+            }
+
+            var definition = compatible[rng.Next(compatible.Count)];
+            if (!_adapter.TryApplyEnchantment(card, definition, out var failureReason) && config.LogRolls)
+            {
+                _log($"CardRewardEnchant: failed to apply {definition.Keyword} to {rewardKey} cardIndex={index}: {failureReason}");
             }
 
             index++;
