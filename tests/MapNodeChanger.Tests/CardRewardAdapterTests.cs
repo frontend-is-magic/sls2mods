@@ -45,6 +45,9 @@ public sealed class CardRewardAdapterTests
         Assert.Contains("ModelDb.GetById<EnchantmentModel>", source);
         Assert.Contains("ModelId.SlugifyCategory<EnchantmentModel>()", source);
         Assert.Contains("definition.Keyword.ToUpperInvariant()", source);
+        Assert.Contains("EnchantmentAmountCatalog.GetAmount(definition.Keyword)", source);
+        Assert.Contains("CardCmd.Enchant(enchantment, cardModel, amount)", source);
+        Assert.DoesNotContain("CardCmd.Enchant(enchantment, cardModel, 1m)", source);
         Assert.Contains("CanEnchant", source);
     }
 
