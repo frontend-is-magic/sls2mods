@@ -70,6 +70,18 @@ public sealed class SharedUtilsTests
         Assert.Equal(new[] { "adroit", "swift" }, state.ToBlacklist());
     }
 
+    [Theory]
+    [InlineData("zh", "是否开启")]
+    [InlineData("zh-Hans", "是否开启")]
+    [InlineData("zh-Hant", "是否开启")]
+    [InlineData("en", "Enabled")]
+    [InlineData("fr-FR", "Enabled")]
+    [InlineData("", "Enabled")]
+    public void ModMenuLocalizationSelectsTextFromLocale(string locale, string expected)
+    {
+        Assert.Equal(expected, ModMenuLocalization.EnabledLabel(locale));
+    }
+
     [Fact]
     public void ModConfigLoaderCanSaveConfigExplicitly()
     {

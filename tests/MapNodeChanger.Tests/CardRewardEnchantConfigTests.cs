@@ -65,6 +65,17 @@ public sealed class CardRewardEnchantConfigTests
     }
 
     [Fact]
+    public void MenuSourceAddsEnabledOptionBeforeGeneratedOptions()
+    {
+        var source = File.ReadAllText(FindRepoFile("mods/CardRewardEnchantments/Features/CardRewards/CardRewardEnchantConfigMenu.cs"));
+
+        Assert.True(
+            source.IndexOf("AddEnabledOption", StringComparison.Ordinal) <
+            source.IndexOf("GenerateOptionsForAllProperties", StringComparison.Ordinal));
+        Assert.Contains("ConfigHideInUI", source);
+    }
+
+    [Fact]
     public void MenuInitializesDynamicKeywordBlacklist()
     {
         CardRewardEnchantConfigMenu.InitializeFrom(
@@ -127,5 +138,23 @@ public sealed class CardRewardEnchantConfigTests
         CardRewardEnchantConfigMenu.EnchantChancePercent = 100.0;
         CardRewardEnchantConfigMenu.LogRolls = true;
         CardRewardEnchantConfigMenu.InitializeFrom(new CardRewardEnchantConfig(), Array.Empty<string>());
+    }
+
+    private static string FindRepoFile(string relativePath)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (directory != null)
+        {
+            var candidate = Path.Combine(directory.FullName, relativePath);
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new FileNotFoundException($"Could not find {relativePath}");
     }
 }
