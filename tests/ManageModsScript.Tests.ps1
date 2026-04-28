@@ -5,6 +5,7 @@ $scriptPath = Join-Path $repoRoot "manage-mods-win11.bat"
 $modRoot = Join-Path $repoRoot "mods\VakuuRoomInjection"
 $readmePath = Join-Path $repoRoot "README.md"
 $gitignorePath = Join-Path $repoRoot ".gitignore"
+$commonBuildPath = Join-Path $repoRoot "utils\Build\ModBuild.ps1"
 
 function Assert-True {
     param(
@@ -22,6 +23,7 @@ Assert-True (-not (Test-Path (Join-Path $repoRoot "VakuuRoomInjection"))) "Root 
 Assert-True (-not (Test-Path (Join-Path $repoRoot "enable-vakuu-room-injection.ps1"))) "Old enable-vakuu-room-injection.ps1 should be removed."
 Assert-True (Test-Path $scriptPath) "manage-mods-win11.bat should exist."
 Assert-True (Test-Path $readmePath) "Root README.md should exist."
+Assert-True (Test-Path $commonBuildPath) "Common mod build helper should exist under utils\Build."
 
 $script = Get-Content -Raw -Path $scriptPath
 Assert-True ($script.Contains("BrowseForFolder")) "Script should open a folder picker for the game directory."
@@ -63,9 +65,18 @@ foreach ($mod in $repoMods) {
 
     if (Test-Path $buildPath) {
         $build = Get-Content -Raw -Path $buildPath
-        Assert-True ($build.Contains("Config.json.example") -and $build.Contains("Copy-Item") -and $build.Contains('$dist')) "$modId build should copy its example config into dist."
+        Assert-True ($build.Contains("utils\Build\ModBuild.ps1")) "$modId build should dot-source the common build helper."
+        Assert-True ($build.Contains("Build-Sls2Mod")) "$modId build should call the common Build-Sls2Mod helper."
+        Assert-True (-not $build.Contains("dotnet build")) "$modId build should delegate dotnet build to the common helper."
     }
 }
+
+$commonBuild = Get-Content -Raw -Path $commonBuildPath
+Assert-True ($commonBuild.Contains("function Build-Sls2Mod")) "Common build helper should define Build-Sls2Mod."
+Assert-True ($commonBuild.Contains("sts2.dll")) "Common build helper should validate and copy sts2.dll."
+Assert-True ($commonBuild.Contains("dotnet build")) "Common build helper should build the mod project."
+Assert-True ($commonBuild.Contains("Config.json.example")) "Common build helper should copy example configs into dist."
+Assert-True ($commonBuild.Contains("CleanDistNames")) "Common build helper should support old dist artifact cleanup."
 
 $readme = Get-Content -Raw -Path $readmePath
 Assert-True ($readme.TrimStart().StartsWith("# Mod Manager")) "README should lead with mod management instructions."

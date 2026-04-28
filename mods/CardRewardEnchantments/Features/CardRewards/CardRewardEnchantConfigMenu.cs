@@ -30,6 +30,7 @@ public sealed partial class CardRewardEnchantConfigMenu : SimpleModConfig
         }
     }
 
+    [ConfigHideInUI]
     public static bool Enabled { get; set; } = true;
 
     [ConfigSlider(0.0, 100.0, 0.1, Format = "{0:0.0}%")]
@@ -39,9 +40,12 @@ public sealed partial class CardRewardEnchantConfigMenu : SimpleModConfig
 
     public override void SetupConfigUI(Control optionContainer)
     {
+        AddEnabledOption(optionContainer);
         GenerateOptionsForAllProperties(optionContainer);
+        ModMenuLocalization.LocalizeLabels(optionContainer, OptionLabels());
         AddKeywordBlacklistOptions(optionContainer);
         AddRestoreDefaultsButton(optionContainer);
+        ModMenuLocalization.LocalizeLabels(optionContainer, OptionLabels());
         SetupFocusNeighbors(optionContainer);
     }
 
@@ -69,6 +73,22 @@ public sealed partial class CardRewardEnchantConfigMenu : SimpleModConfig
         return BlacklistState.IsBlacklisted(keyword);
     }
 
+    private void AddEnabledOption(Control optionContainer)
+    {
+        var labelText = ModMenuLocalization.EnabledLabel();
+        var tickbox = new NConfigBooleanTickbox(
+            () => Enabled,
+            value => Enabled = value,
+            Changed);
+        var label = CreateRawLabelControl(labelText, 28);
+        var row = new NConfigOptionRow(ModPrefix, labelText, label, tickbox)
+        {
+            UniqueNameInOwner = true,
+            Owner = optionContainer
+        };
+        optionContainer.AddChild(row, forceReadableName: false, Node.InternalMode.Disabled);
+    }
+
     private void AddKeywordBlacklistOptions(Control optionContainer)
     {
         if (_keywords.Count == 0)
@@ -76,14 +96,17 @@ public sealed partial class CardRewardEnchantConfigMenu : SimpleModConfig
             return;
         }
 
-        var section = CreateCollapsibleSection("Enchantment blacklist", collapsedByDefault: true);
+        var section = CreateCollapsibleSection(
+            ModMenuLocalization.Text("Enchantment blacklist", "附魔黑名单"),
+            collapsedByDefault: true);
         optionContainer.AddChild(section, forceReadableName: false, Node.InternalMode.Disabled);
 
         foreach (var keyword in _keywords)
         {
             var tickbox = new NConfigKeywordTickbox(keyword, BlacklistState, Changed);
             var label = CreateRawLabelControl(keyword, 28);
-            var row = new NConfigOptionRow(ModPrefix, $"Blacklist {keyword}", label, tickbox)
+            var rowLabel = ModMenuLocalization.Text($"Blacklist {keyword}", $"屏蔽 {keyword}");
+            var row = new NConfigOptionRow(ModPrefix, rowLabel, label, tickbox)
             {
                 UniqueNameInOwner = true,
                 Owner = optionContainer
@@ -100,6 +123,19 @@ public sealed partial class CardRewardEnchantConfigMenu : SimpleModConfig
         }
 
         return Math.Clamp(percent, 0, 100) / 100.0;
+    }
+
+    private static IReadOnlyDictionary<string, string> OptionLabels()
+    {
+        return new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["EnchantChancePercent"] = ModMenuLocalization.Text("Enchant chance", "附魔概率"),
+            ["Enchant Chance Percent"] = ModMenuLocalization.Text("Enchant chance", "附魔概率"),
+            ["LogRolls"] = ModMenuLocalization.Text("Log rolls", "记录随机结果"),
+            ["Log Rolls"] = ModMenuLocalization.Text("Log rolls", "记录随机结果"),
+            ["Restore Defaults"] = ModMenuLocalization.Text("Restore defaults", "恢复默认"),
+            ["Restore defaults"] = ModMenuLocalization.Text("Restore defaults", "恢复默认")
+        };
     }
 
     private void OnConfigChanged(object? sender, EventArgs args)

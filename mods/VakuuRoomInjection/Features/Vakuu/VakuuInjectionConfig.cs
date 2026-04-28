@@ -1,9 +1,10 @@
 using System;
 using System.Text.Json.Serialization;
+using Sls2Mods.Utils.Config;
 
 namespace VakuuRoomInjection.Features.Vakuu;
 
-public sealed class VakuuInjectionConfig
+public sealed class VakuuInjectionConfig : IModConfig
 {
     [JsonPropertyName("schema_version")]
     public int SchemaVersion { get; set; } = 2;
