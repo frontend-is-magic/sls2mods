@@ -14,3 +14,7 @@ sts2.dll
 MapNodeChangerConfig.json
 mod-manager-config.yaml
 .worktrees/
+!third_party/
+!third_party/BaseLib/
+!third_party/BaseLib/BaseLib.dll
+!third_party/BaseLib/BaseLib.pck

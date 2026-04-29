@@ -98,7 +98,19 @@ If any file is missing, the script downloads the latest release assets from the 
 https://github.com/Alchyr/BaseLib-StS2/releases/latest
 ```
 
-This requires internet access. If GitHub cannot be reached or the release assets are unavailable, the script stops and asks the player to install BaseLib manually before installing other mods.
+This requires internet access. If GitHub cannot be reached, the request times out, or the release assets are unavailable, the script uses the BaseLib bundled fallback at:
+
+```text
+third_party\BaseLib\
+```
+
+The bundled fallback is copied only after the GitHub download fails. If both GitHub and `third_party\BaseLib` are unavailable or incomplete, the script stops, keeps the command window open, and asks the player to install BaseLib manually before installing other mods.
+
+BaseLib bundled fallback source:
+
+```text
+https://github.com/Alchyr/BaseLib-StS2/releases/tag/v0.2.8
+```
 
 ## Removing BaseLib
 
@@ -117,6 +129,7 @@ This removes BaseLib and all other installed mods, returning the game mod folder
 - 创建或覆盖 `<Slay the Spire 2>\mods\BaseLib\BaseLib.dll`。
 - 创建或覆盖 `<Slay the Spire 2>\mods\BaseLib\BaseLib.pck`。
 - 创建或覆盖 `<Slay the Spire 2>\mods\BaseLib\BaseLib.json`。
+- 如果 GitHub 下载超时或失败，从 `third_party\BaseLib` 读取内置 BaseLib 兜底文件并复制到 `<Slay the Spire 2>\mods\BaseLib`。
 - 创建 `<Slay the Spire 2>\mods\<ModName>`。
 - 覆盖 `<Slay the Spire 2>\mods\<ModName>\<ModName>.dll`。
 - 覆盖 `<Slay the Spire 2>\mods\<ModName>\<ModName>.json`。

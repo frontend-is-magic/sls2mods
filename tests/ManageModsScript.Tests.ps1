@@ -70,6 +70,12 @@ Assert-True ($script.Contains("BaseLib.pck")) "Script should check/install BaseL
 Assert-True ($script.Contains("BaseLib.json")) "Script should check/install BaseLib.json."
 Assert-True ($script.Contains("MOD_MANAGER_TEST_SKIP_BASELIB")) "Script should let tests skip real BaseLib installation."
 Assert-True ($script.Contains("MOD_MANAGER_TEST_BASELIB_SOURCE")) "Script should let tests install BaseLib from a local fake source."
+Assert-True ($script.Contains("third_party\BaseLib")) "Script should include a bundled BaseLib fallback directory."
+Assert-True ($script.Contains("MOD_MANAGER_TEST_BASELIB_DOWNLOAD_FAIL")) "Script should let tests simulate a GitHub BaseLib download failure."
+Assert-True ($script.Contains("MOD_MANAGER_TEST_BUNDLED_BASELIB_DIR")) "Script should let tests point bundled BaseLib fallback at a local fake source."
+Assert-True ($script.Contains("MOD_MANAGER_TEST_NO_PAUSE")) "Script should let tests skip the interactive error pause."
+Assert-True ($script.Contains("-UseBasicParsing")) "Script should use Windows PowerShell 5.1 compatible web requests."
+Assert-True ($script.Contains("TimeoutSec")) "Script should set a bounded timeout for BaseLib downloads."
 Assert-True ($script.Contains(":restore_vanilla_mods")) "Script should restore vanilla by clearing game mods when BaseLib is removed."
 
 $repoMods = Get-ChildItem -Path (Join-Path $repoRoot "mods") -Directory
@@ -114,9 +120,13 @@ Assert-True ($readme.Contains("Config File")) "README should document the mod ma
 Assert-True ($readme.Contains("Change game folder")) "README should document the menu option for changing the saved game directory."
 Assert-True ($readme.Contains("BaseLib")) "README should document BaseLib auto-install and removal behavior."
 Assert-True ($readme.Contains("Alchyr/BaseLib-StS2")) "README should document the official BaseLib GitHub source."
+Assert-True ($readme.Contains("third_party\BaseLib")) "README should document the bundled BaseLib fallback."
+Assert-True ($readme.Contains("BaseLib bundled fallback")) "README should explain when the bundled BaseLib fallback is used."
 
 $gitignore = Get-Content -Raw -Path $gitignorePath
 Assert-True ($gitignore.Contains("mod-manager-config.yaml")) "Generated mod manager YAML config should be ignored by git."
+Assert-True ($gitignore.Contains("!third_party/BaseLib/BaseLib.dll")) "Bundled BaseLib.dll should be allowed through the global DLL ignore rule."
+Assert-True ($gitignore.Contains("!third_party/BaseLib/BaseLib.pck")) "Bundled BaseLib.pck should be allowed through the global PCK ignore rule."
 
 if (Test-Path "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2\data_sts2_windows_x86_64\sts2.dll") {
     $gameDir = "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2"
@@ -190,6 +200,41 @@ try {
     Remove-Item -Path $configPath -Force -ErrorAction SilentlyContinue
     Assert-True ($LASTEXITCODE -eq 0) "Script should exit cleanly when BaseLib auto-install is skipped in tests."
     Assert-True (($output -join "`n").Contains("Skipping BaseLib check")) "Script should report skipped BaseLib checks in tests."
+}
+finally {
+    Remove-Item -Path $tempGameDir -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+$tempGameDir = New-TestGameDir
+$fakeBundledBaseLib = New-TestBaseLibSource
+try {
+    $configPath = Join-Path $env:TEMP ("sts2-mod-manager-" + [guid]::NewGuid().ToString("N") + ".yaml")
+    $cmd = "set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_GAME_DIR=$tempGameDir`"& set `"MOD_MANAGER_TEST_BASELIB_DOWNLOAD_FAIL=1`"& set `"MOD_MANAGER_TEST_BUNDLED_BASELIB_DIR=$fakeBundledBaseLib`"& set `"MOD_MANAGER_TEST_ACTION=4`"& `"$scriptPath`""
+    $output = & cmd.exe /d /c $cmd
+    Remove-Item -Path $configPath -Force -ErrorAction SilentlyContinue
+    $targetBaseLib = Join-Path $tempGameDir "mods\BaseLib"
+    Assert-True ($LASTEXITCODE -eq 0) "Script should exit cleanly after installing BaseLib from the bundled fallback."
+    Assert-True (Test-Path (Join-Path $targetBaseLib "BaseLib.dll")) "Bundled fallback should install BaseLib.dll."
+    Assert-True (Test-Path (Join-Path $targetBaseLib "BaseLib.pck")) "Bundled fallback should install BaseLib.pck."
+    Assert-True (Test-Path (Join-Path $targetBaseLib "BaseLib.json")) "Bundled fallback should install BaseLib.json."
+    Assert-True (($output -join "`n").Contains("Trying bundled BaseLib fallback")) "Script should report bundled fallback after download failure."
+}
+finally {
+    Remove-Item -Path $tempGameDir -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path $fakeBundledBaseLib -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+$tempGameDir = New-TestGameDir
+try {
+    $missingBundledBaseLib = Join-Path $env:TEMP ("sts2-missing-baselib-" + [guid]::NewGuid().ToString("N"))
+    $configPath = Join-Path $env:TEMP ("sts2-mod-manager-" + [guid]::NewGuid().ToString("N") + ".yaml")
+    $cmd = "set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_GAME_DIR=$tempGameDir`"& set `"MOD_MANAGER_TEST_BASELIB_DOWNLOAD_FAIL=1`"& set `"MOD_MANAGER_TEST_BUNDLED_BASELIB_DIR=$missingBundledBaseLib`"& set `"MOD_MANAGER_TEST_NO_PAUSE=1`"& set `"MOD_MANAGER_TEST_ACTION=4`"& `"$scriptPath`""
+    $output = & cmd.exe /d /c $cmd
+    Remove-Item -Path $configPath -Force -ErrorAction SilentlyContinue
+    Assert-True ($LASTEXITCODE -ne 0) "Script should fail with a nonzero exit code when GitHub and bundled BaseLib both fail."
+    Assert-True (($output -join "`n").Contains("Could not install BaseLib automatically")) "Script should show a clear automatic install failure."
+    Assert-True (($output -join "`n").Contains("https://github.com/Alchyr/BaseLib-StS2/releases/latest")) "Script should show the manual BaseLib download URL."
+    Assert-True (($output -join "`n").Contains("BaseLib.dll, BaseLib.pck, and BaseLib.json")) "Script should show the required BaseLib files."
 }
 finally {
     Remove-Item -Path $tempGameDir -Recurse -Force -ErrorAction SilentlyContinue
