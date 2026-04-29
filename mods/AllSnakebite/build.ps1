@@ -5,37 +5,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$previousLocation = Get-Location
-Set-Location $PSScriptRoot
-try {
-$stsDll = Join-Path $GameDir "data_sts2_windows_x86_64\sts2.dll"
-if (-not (Test-Path $stsDll)) {
-    throw "sts2.dll not found at $stsDll"
-}
+. (Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) "utils\Build\ModBuild.ps1")
 
-Copy-Item $stsDll -Destination (Join-Path $PSScriptRoot "sts2.dll") -Force
-
-dotnet build (Join-Path $PSScriptRoot "AllSnakebite.csproj")
-if ($LASTEXITCODE -ne 0) {
-    throw "dotnet build failed."
-}
-
-$modId = "AllSnakebite"
-$dll = Join-Path $PSScriptRoot ".godot\mono\temp\bin\Debug\$modId.dll"
-if (-not (Test-Path $dll)) {
-    throw "Built DLL not found at $dll"
-}
-
-$dist = Join-Path $PSScriptRoot "dist"
-New-Item -ItemType Directory -Force -Path $dist | Out-Null
-Remove-Item -Path (Join-Path $dist "$modId.pck") -Force -ErrorAction SilentlyContinue
-Remove-Item -Path (Join-Path $dist "$($modId)Config.json") -Force -ErrorAction SilentlyContinue
-Copy-Item $dll -Destination (Join-Path $dist "$modId.dll") -Force
-Copy-Item (Join-Path $PSScriptRoot "$modId.json") -Destination (Join-Path $dist "$modId.json") -Force
-Copy-Item (Join-Path $PSScriptRoot "$($modId)Config.json.example") -Destination (Join-Path $dist "$($modId)Config.json.example") -Force
-
-Write-Host "Built mod files in $dist"
-}
-finally {
-    Set-Location $previousLocation
-}
+Build-Sls2Mod `
+    -ModRoot $PSScriptRoot `
+    -ModId "AllSnakebite" `
+    -ProjectFile "AllSnakebite.csproj" `
+    -GameDir $GameDir
