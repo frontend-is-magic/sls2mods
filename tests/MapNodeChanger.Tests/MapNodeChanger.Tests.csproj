@@ -36,5 +36,6 @@
       the real mod project with an explicit dotnet build.
     -->
     <Compile Include="..\..\mods\CardRewardEnchantments\Features\CardRewards\*.cs" LinkBase="CardRewardEnchantments\Features\CardRewards" />
+    <Compile Include="..\..\mods\AllSnakebite\*.cs" LinkBase="AllSnakebite" />
   </ItemGroup>
 </Project>

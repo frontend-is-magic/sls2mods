@@ -1,0 +1,12 @@
+{
+  "id": "AllSnakebite",
+  "name": "All Snakebite",
+  "author": "sls2mods",
+  "version": "0.1.0",
+  "description": "Gives every card retain, appends 蛇咬 to card names, and turns attack card damage into poison.",
+  "main": "AllSnakebite.dll",
+  "has_pck": false,
+  "has_dll": true,
+  "dependencies": ["BaseLib"],
+  "affects_gameplay": true
+}
