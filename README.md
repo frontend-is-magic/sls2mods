@@ -76,10 +76,47 @@ On startup, the script checks this file first. If `game_dir` points to a valid S
 
 Use the `Change game folder` menu option when the game is moved or when you selected the wrong folder. This option opens the folder picker again and overwrites `mod-manager-config.yaml` after validation succeeds.
 
+## BaseLib Auto Install
+
+After a valid Slay the Spire 2 folder is selected, `manage-mods-win11.bat` checks whether BaseLib is installed at:
+
+```text
+<Slay the Spire 2>\mods\BaseLib\
+```
+
+The script requires these three files:
+
+```text
+BaseLib.dll
+BaseLib.pck
+BaseLib.json
+```
+
+If any file is missing, the script downloads the latest release assets from the official BaseLib repository:
+
+```text
+https://github.com/Alchyr/BaseLib-StS2/releases/latest
+```
+
+This requires internet access. If GitHub cannot be reached or the release assets are unavailable, the script stops and asks the player to install BaseLib manually before installing other mods.
+
+## Removing BaseLib
+
+Choosing `BaseLib` in the `Remove mod` menu is treated as "restore vanilla game mods". The script deletes every folder under:
+
+```text
+<Slay the Spire 2>\mods\
+```
+
+This removes BaseLib and all other installed mods, returning the game mod folder to a vanilla state. It does not delete `%APPDATA%\SlayTheSpire2\mod_configs`, so user config files remain on disk but do not affect the game unless the corresponding mod is installed again.
+
 脚本可能产生这些文件系统改动：
 
 - 创建或覆盖 `mod-manager-config.yaml`，用于保存游戏目录。
 - 创建 `<Slay the Spire 2>\mods`。
+- 创建或覆盖 `<Slay the Spire 2>\mods\BaseLib\BaseLib.dll`。
+- 创建或覆盖 `<Slay the Spire 2>\mods\BaseLib\BaseLib.pck`。
+- 创建或覆盖 `<Slay the Spire 2>\mods\BaseLib\BaseLib.json`。
 - 创建 `<Slay the Spire 2>\mods\<ModName>`。
 - 覆盖 `<Slay the Spire 2>\mods\<ModName>\<ModName>.dll`。
 - 覆盖 `<Slay the Spire 2>\mods\<ModName>\<ModName>.json`。
@@ -89,6 +126,7 @@ Use the `Change game folder` menu option when the game is moved or when you sele
 - 安装带有 `<ModName>Config.json.example` 的 mod 时，可能创建 `%APPDATA%\SlayTheSpire2\mod_configs`。
 - 安装带有 `<ModName>Config.json.example` 的 mod 时，可能创建 `%APPDATA%\SlayTheSpire2\mod_configs\<ModName>Config.json`。
 - 安装 `VakuuRoomInjection` 时，可能删除旧目录 `<Slay the Spire 2>\mods\MapNodeChanger`。
+- 在 `Remove mod` 菜单中选择 `BaseLib` 时，会删除 `<Slay the Spire 2>\mods` 下的所有 mod 文件夹。
 
 最需要注意的是删除功能：选择 `Remove mod` 后，脚本会直接删除所选 mod 文件夹。运行删除前请确认选中的 mod 名称正确。
 

@@ -34,6 +34,8 @@ call :save_game_dir_config
 
 set "GAME_MODS=!GAME_DIR!\mods"
 if not exist "!GAME_MODS!" mkdir "!GAME_MODS!"
+call :ensure_baselib_installed
+if errorlevel 1 goto :end
 
 :main_menu
 echo.
@@ -122,9 +124,77 @@ if errorlevel 1 goto :main_menu
 call :save_game_dir_config
 set "GAME_MODS=!GAME_DIR!\mods"
 if not exist "!GAME_MODS!" mkdir "!GAME_MODS!"
+call :ensure_baselib_installed
+if errorlevel 1 goto :end
 echo Saved game folder:
 echo !GAME_DIR!
 goto :main_menu
+
+:ensure_baselib_installed
+set "BASELIB_DIR=!GAME_MODS!\BaseLib"
+if defined MOD_MANAGER_TEST_SKIP_BASELIB (
+    echo Skipping BaseLib check because MOD_MANAGER_TEST_SKIP_BASELIB is set.
+    exit /b 0
+)
+
+if exist "!BASELIB_DIR!\BaseLib.dll" if exist "!BASELIB_DIR!\BaseLib.pck" if exist "!BASELIB_DIR!\BaseLib.json" exit /b 0
+
+echo.
+echo BaseLib is missing or incomplete. Installing BaseLib...
+
+if defined MOD_MANAGER_TEST_BASELIB_SOURCE (
+    call :install_baselib_from_local "%MOD_MANAGER_TEST_BASELIB_SOURCE%"
+) else (
+    call :install_baselib_from_github
+)
+if errorlevel 1 exit /b 1
+
+if exist "!BASELIB_DIR!\BaseLib.dll" if exist "!BASELIB_DIR!\BaseLib.pck" if exist "!BASELIB_DIR!\BaseLib.json" (
+    echo Installed BaseLib to:
+    echo !BASELIB_DIR!
+    exit /b 0
+)
+
+echo BaseLib installation did not create all required files.
+echo Required files: BaseLib.dll, BaseLib.pck, BaseLib.json
+exit /b 1
+
+:install_baselib_from_local
+set "BASELIB_SOURCE=%~1"
+if not exist "!BASELIB_SOURCE!\BaseLib.dll" (
+    echo Missing BaseLib.dll in !BASELIB_SOURCE!
+    exit /b 1
+)
+if not exist "!BASELIB_SOURCE!\BaseLib.pck" (
+    echo Missing BaseLib.pck in !BASELIB_SOURCE!
+    exit /b 1
+)
+if not exist "!BASELIB_SOURCE!\BaseLib.json" (
+    echo Missing BaseLib.json in !BASELIB_SOURCE!
+    exit /b 1
+)
+if not exist "!BASELIB_DIR!" mkdir "!BASELIB_DIR!"
+copy /y "!BASELIB_SOURCE!\BaseLib.dll" "!BASELIB_DIR!\BaseLib.dll" >nul
+copy /y "!BASELIB_SOURCE!\BaseLib.pck" "!BASELIB_DIR!\BaseLib.pck" >nul
+copy /y "!BASELIB_SOURCE!\BaseLib.json" "!BASELIB_DIR!\BaseLib.json" >nul
+exit /b 0
+
+:install_baselib_from_github
+if not exist "!BASELIB_DIR!" mkdir "!BASELIB_DIR!"
+set "BASELIB_RELEASE_API=https://api.github.com/repos/Alchyr/BaseLib-StS2/releases/latest"
+set "BASELIB_MANUAL_URL=https://github.com/Alchyr/BaseLib-StS2/releases/latest"
+set "BASELIB_DIR_ENV=!BASELIB_DIR!"
+set "BASELIB_RELEASE_API_ENV=!BASELIB_RELEASE_API!"
+"%POWERSHELL_EXE%" -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference = 'Stop'; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $target = $env:BASELIB_DIR_ENV; $api = $env:BASELIB_RELEASE_API_ENV; $headers = @{ 'User-Agent' = 'sls2mods-manager' }; New-Item -ItemType Directory -Force -Path $target | Out-Null; $release = Invoke-RestMethod -Headers $headers -Uri $api; foreach ($name in @('BaseLib.dll', 'BaseLib.pck', 'BaseLib.json')) { $asset = $release.assets | Where-Object { $_.name -eq $name } | Select-Object -First 1; if ($null -eq $asset) { throw ('Missing BaseLib release asset: ' + $name) }; Invoke-WebRequest -Headers $headers -Uri $asset.browser_download_url -OutFile (Join-Path $target $name) }"
+if errorlevel 1 (
+    echo Failed to download BaseLib from GitHub.
+    echo Please install BaseLib manually from:
+    echo !BASELIB_MANUAL_URL!
+    echo Then copy BaseLib.dll, BaseLib.pck, and BaseLib.json to:
+    echo !BASELIB_DIR!
+    exit /b 1
+)
+exit /b 0
 
 :add_mod
 call :list_repo_mods
@@ -258,9 +328,18 @@ if "%MOD_COUNT%"=="0" (
 )
 
 echo.
-set /p "MOD_CHOICE=Choose a mod to remove: "
+if defined MOD_MANAGER_TEST_MOD_CHOICE (
+    set "MOD_CHOICE=%MOD_MANAGER_TEST_MOD_CHOICE%"
+) else (
+    set /p "MOD_CHOICE=Choose a mod to remove: "
+)
 call :resolve_choice "%MOD_CHOICE%"
 if errorlevel 1 goto :main_menu
+
+if /i "!SELECTED_MOD!"=="BaseLib" (
+    call :restore_vanilla_mods
+    goto :main_menu
+)
 
 set "TARGET_DIR=!GAME_MODS!\!SELECTED_MOD!"
 echo.
@@ -269,6 +348,17 @@ rmdir /s /q "%TARGET_DIR%"
 echo Removed !SELECTED_MOD! from:
 echo !TARGET_DIR!
 goto :main_menu
+
+:restore_vanilla_mods
+echo.
+echo Removing BaseLib restores the vanilla game mod folder.
+echo This deletes every installed mod folder under:
+echo !GAME_MODS!
+for /d %%A in ("!GAME_MODS!\*") do (
+    rmdir /s /q "%%~fA"
+)
+echo Restored vanilla game mods.
+exit /b 0
 
 :list_installed_mods
 set "MOD_COUNT=0"
