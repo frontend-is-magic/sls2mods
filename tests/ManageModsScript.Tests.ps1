@@ -18,6 +18,23 @@ function Assert-True {
     }
 }
 
+function New-TestGameDir {
+    $root = Join-Path $env:TEMP ("sts2-game-" + [guid]::NewGuid().ToString("N"))
+    $dataDir = Join-Path $root "data_sts2_windows_x86_64"
+    New-Item -ItemType Directory -Force -Path $dataDir | Out-Null
+    Set-Content -Path (Join-Path $dataDir "sts2.dll") -Value "fake sts2" -Encoding ASCII
+    return $root
+}
+
+function New-TestBaseLibSource {
+    $root = Join-Path $env:TEMP ("sts2-baselib-" + [guid]::NewGuid().ToString("N"))
+    New-Item -ItemType Directory -Force -Path $root | Out-Null
+    Set-Content -Path (Join-Path $root "BaseLib.dll") -Value "fake dll" -Encoding ASCII
+    Set-Content -Path (Join-Path $root "BaseLib.pck") -Value "fake pck" -Encoding ASCII
+    Set-Content -Path (Join-Path $root "BaseLib.json") -Value '{"mod_id":"BaseLib"}' -Encoding ASCII
+    return $root
+}
+
 Assert-True (Test-Path $modRoot) "VakuuRoomInjection should live under mods\VakuuRoomInjection."
 Assert-True (-not (Test-Path (Join-Path $repoRoot "VakuuRoomInjection"))) "Root VakuuRoomInjection directory should be removed."
 Assert-True (-not (Test-Path (Join-Path $repoRoot "enable-vakuu-room-injection.ps1"))) "Old enable-vakuu-room-injection.ps1 should be removed."
@@ -46,6 +63,14 @@ Assert-True ($script.Contains(":init_mod_config")) "Script should initialize con
 Assert-True ($script.Contains("%MOD_ID%Config.json.example")) "Script should discover each mod's example config by mod id."
 Assert-True ($script.Contains("%DIST_DIR%\%MOD_ID%Config.json.example")) "Script should initialize installed configs from dist templates."
 Assert-True ($script.Contains("OLD_TARGET_DIR")) "Script should clean up the old MapNodeChanger install directory when installing VakuuRoomInjection."
+Assert-True ($script.Contains(":ensure_baselib_installed")) "Script should ensure BaseLib is installed after selecting a game directory."
+Assert-True ($script.Contains("https://api.github.com/repos/Alchyr/BaseLib-StS2/releases/latest")) "Script should download BaseLib from the official GitHub latest release API."
+Assert-True ($script.Contains("BaseLib.dll")) "Script should check/install BaseLib.dll."
+Assert-True ($script.Contains("BaseLib.pck")) "Script should check/install BaseLib.pck."
+Assert-True ($script.Contains("BaseLib.json")) "Script should check/install BaseLib.json."
+Assert-True ($script.Contains("MOD_MANAGER_TEST_SKIP_BASELIB")) "Script should let tests skip real BaseLib installation."
+Assert-True ($script.Contains("MOD_MANAGER_TEST_BASELIB_SOURCE")) "Script should let tests install BaseLib from a local fake source."
+Assert-True ($script.Contains(":restore_vanilla_mods")) "Script should restore vanilla by clearing game mods when BaseLib is removed."
 
 $repoMods = Get-ChildItem -Path (Join-Path $repoRoot "mods") -Directory
 foreach ($mod in $repoMods) {
@@ -87,6 +112,8 @@ Assert-True ($readme.Contains("Potential Side Effects")) "README should clearly 
 Assert-True ($readme.Contains("PATH, registry, Steam, .NET, Godot, or system environment variables")) "README should say the script does not change dependency or system environment settings."
 Assert-True ($readme.Contains("Config File")) "README should document the mod manager YAML config file."
 Assert-True ($readme.Contains("Change game folder")) "README should document the menu option for changing the saved game directory."
+Assert-True ($readme.Contains("BaseLib")) "README should document BaseLib auto-install and removal behavior."
+Assert-True ($readme.Contains("Alchyr/BaseLib-StS2")) "README should document the official BaseLib GitHub source."
 
 $gitignore = Get-Content -Raw -Path $gitignorePath
 Assert-True ($gitignore.Contains("mod-manager-config.yaml")) "Generated mod manager YAML config should be ignored by git."
@@ -94,7 +121,7 @@ Assert-True ($gitignore.Contains("mod-manager-config.yaml")) "Generated mod mana
 if (Test-Path "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2\data_sts2_windows_x86_64\sts2.dll") {
     $gameDir = "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2"
     $configPath = Join-Path $env:TEMP ("sts2-mod-manager-" + [guid]::NewGuid().ToString("N") + ".yaml")
-    $cmd = "set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_GAME_DIR=$gameDir`"& set `"MOD_MANAGER_TEST_ACTION=4`"& `"$scriptPath`""
+    $cmd = "set `"MOD_MANAGER_TEST_SKIP_BASELIB=1`"& set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_GAME_DIR=$gameDir`"& set `"MOD_MANAGER_TEST_ACTION=4`"& `"$scriptPath`""
     $output = & cmd.exe /d /c $cmd
     Remove-Item -Path $configPath -Force -ErrorAction SilentlyContinue
     Assert-True ($LASTEXITCODE -eq 0) "Script should exit cleanly after a Program Files (x86) game path is selected."
@@ -105,7 +132,7 @@ if (Test-Path "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2\da
     $gameDir = "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2"
     $configPath = Join-Path $env:TEMP ("sts2-mod-manager-" + [guid]::NewGuid().ToString("N") + ".yaml")
     Set-Content -Path $configPath -Value "game_dir: $gameDir" -Encoding ASCII
-    $cmd = "set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_ACTION=4`"& `"$scriptPath`""
+    $cmd = "set `"MOD_MANAGER_TEST_SKIP_BASELIB=1`"& set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_ACTION=4`"& `"$scriptPath`""
     $output = & cmd.exe /d /c $cmd
     Remove-Item -Path $configPath -Force -ErrorAction SilentlyContinue
     Assert-True ($LASTEXITCODE -eq 0) "Script should exit cleanly when using a cached YAML game directory."
@@ -115,7 +142,7 @@ if (Test-Path "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2\da
 if (Test-Path "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2\data_sts2_windows_x86_64\sts2.dll") {
     $gameDir = "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2"
     $configPath = Join-Path $env:TEMP ("sts2-mod-manager-" + [guid]::NewGuid().ToString("N") + ".yaml")
-    $cmd = "set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_GAME_DIR=$gameDir`"& set `"MOD_MANAGER_TEST_ACTION=4`"& `"$scriptPath`""
+    $cmd = "set `"MOD_MANAGER_TEST_SKIP_BASELIB=1`"& set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_GAME_DIR=$gameDir`"& set `"MOD_MANAGER_TEST_ACTION=4`"& `"$scriptPath`""
     $output = & cmd.exe /d /c $cmd
     $config = Get-Content -Raw -Path $configPath
     Remove-Item -Path $configPath -Force -ErrorAction SilentlyContinue
@@ -127,11 +154,81 @@ if (Test-Path "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2\da
     $gameDir = "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2"
     $configPath = Join-Path $env:TEMP ("sts2-mod-manager-" + [guid]::NewGuid().ToString("N") + ".yaml")
     Set-Content -Path $configPath -Value "game_dir: C:\NotARealSlayTheSpire2Folder" -Encoding ASCII
-    $cmd = "set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_GAME_DIR=$gameDir`"& set `"MOD_MANAGER_TEST_ACTIONS=3,4`"& `"$scriptPath`""
+    $cmd = "set `"MOD_MANAGER_TEST_SKIP_BASELIB=1`"& set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_GAME_DIR=$gameDir`"& set `"MOD_MANAGER_TEST_ACTIONS=3,4`"& `"$scriptPath`""
     $output = & cmd.exe /d /c $cmd
     $config = Get-Content -Raw -Path $configPath
     Remove-Item -Path $configPath -Force -ErrorAction SilentlyContinue
     Assert-True ($LASTEXITCODE -eq 0) "Script should exit cleanly after changing the saved game directory."
     Assert-True (($output -join "`n").Contains("Saved game folder:")) "Change game folder should save the newly selected directory."
     Assert-True ($config.Contains("game_dir: $gameDir")) "Change game folder should overwrite the YAML config."
+}
+
+$tempGameDir = New-TestGameDir
+$fakeBaseLib = New-TestBaseLibSource
+try {
+    $configPath = Join-Path $env:TEMP ("sts2-mod-manager-" + [guid]::NewGuid().ToString("N") + ".yaml")
+    $cmd = "set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_GAME_DIR=$tempGameDir`"& set `"MOD_MANAGER_TEST_BASELIB_SOURCE=$fakeBaseLib`"& set `"MOD_MANAGER_TEST_ACTION=4`"& `"$scriptPath`""
+    $output = & cmd.exe /d /c $cmd
+    Remove-Item -Path $configPath -Force -ErrorAction SilentlyContinue
+    $targetBaseLib = Join-Path $tempGameDir "mods\BaseLib"
+    Assert-True ($LASTEXITCODE -eq 0) "Script should exit cleanly after installing BaseLib from a local test source."
+    Assert-True (Test-Path (Join-Path $targetBaseLib "BaseLib.dll")) "Script should install BaseLib.dll from the local test source."
+    Assert-True (Test-Path (Join-Path $targetBaseLib "BaseLib.pck")) "Script should install BaseLib.pck from the local test source."
+    Assert-True (Test-Path (Join-Path $targetBaseLib "BaseLib.json")) "Script should install BaseLib.json from the local test source."
+    Assert-True (($output -join "`n").Contains("Installed BaseLib")) "Script should report BaseLib installation."
+}
+finally {
+    Remove-Item -Path $tempGameDir -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path $fakeBaseLib -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+$tempGameDir = New-TestGameDir
+try {
+    $configPath = Join-Path $env:TEMP ("sts2-mod-manager-" + [guid]::NewGuid().ToString("N") + ".yaml")
+    $cmd = "set `"MOD_MANAGER_TEST_SKIP_BASELIB=1`"& set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_GAME_DIR=$tempGameDir`"& set `"MOD_MANAGER_TEST_ACTION=4`"& `"$scriptPath`""
+    $output = & cmd.exe /d /c $cmd
+    Remove-Item -Path $configPath -Force -ErrorAction SilentlyContinue
+    Assert-True ($LASTEXITCODE -eq 0) "Script should exit cleanly when BaseLib auto-install is skipped in tests."
+    Assert-True (($output -join "`n").Contains("Skipping BaseLib check")) "Script should report skipped BaseLib checks in tests."
+}
+finally {
+    Remove-Item -Path $tempGameDir -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+$tempGameDir = New-TestGameDir
+try {
+    $modsDir = Join-Path $tempGameDir "mods"
+    New-Item -ItemType Directory -Force -Path (Join-Path $modsDir "BaseLib") | Out-Null
+    New-Item -ItemType Directory -Force -Path (Join-Path $modsDir "VakuuRoomInjection") | Out-Null
+    New-Item -ItemType Directory -Force -Path (Join-Path $modsDir "CardRewardEnchantments") | Out-Null
+    $configPath = Join-Path $env:TEMP ("sts2-mod-manager-" + [guid]::NewGuid().ToString("N") + ".yaml")
+    $cmd = "set `"MOD_MANAGER_TEST_SKIP_BASELIB=1`"& set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_GAME_DIR=$tempGameDir`"& set `"MOD_MANAGER_TEST_ACTIONS=2,4`"& set `"MOD_MANAGER_TEST_MOD_CHOICE=1`"& `"$scriptPath`""
+    $output = & cmd.exe /d /c $cmd
+    Remove-Item -Path $configPath -Force -ErrorAction SilentlyContinue
+    Assert-True ($LASTEXITCODE -eq 0) "Script should exit cleanly after restoring vanilla from BaseLib removal."
+    Assert-True (-not (Test-Path (Join-Path $modsDir "BaseLib"))) "Restoring vanilla should remove BaseLib."
+    Assert-True (-not (Test-Path (Join-Path $modsDir "VakuuRoomInjection"))) "Restoring vanilla should remove other installed mods."
+    Assert-True (-not (Test-Path (Join-Path $modsDir "CardRewardEnchantments"))) "Restoring vanilla should remove all installed mods."
+    Assert-True (($output -join "`n").Contains("Restored vanilla game mods")) "Script should report vanilla restoration."
+}
+finally {
+    Remove-Item -Path $tempGameDir -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+$tempGameDir = New-TestGameDir
+try {
+    $modsDir = Join-Path $tempGameDir "mods"
+    New-Item -ItemType Directory -Force -Path (Join-Path $modsDir "BaseLib") | Out-Null
+    New-Item -ItemType Directory -Force -Path (Join-Path $modsDir "VakuuRoomInjection") | Out-Null
+    $configPath = Join-Path $env:TEMP ("sts2-mod-manager-" + [guid]::NewGuid().ToString("N") + ".yaml")
+    $cmd = "set `"MOD_MANAGER_TEST_SKIP_BASELIB=1`"& set `"MOD_MANAGER_TEST_CONFIG_PATH=$configPath`"& set `"MOD_MANAGER_TEST_GAME_DIR=$tempGameDir`"& set `"MOD_MANAGER_TEST_ACTIONS=2,4`"& set `"MOD_MANAGER_TEST_MOD_CHOICE=2`"& `"$scriptPath`""
+    $output = & cmd.exe /d /c $cmd
+    Remove-Item -Path $configPath -Force -ErrorAction SilentlyContinue
+    Assert-True ($LASTEXITCODE -eq 0) "Script should exit cleanly after removing a normal mod."
+    Assert-True (Test-Path (Join-Path $modsDir "BaseLib")) "Removing a normal mod should keep BaseLib."
+    Assert-True (-not (Test-Path (Join-Path $modsDir "VakuuRoomInjection"))) "Removing a normal mod should delete only the selected mod."
+    Assert-True (($output -join "`n").Contains("Removed VakuuRoomInjection")) "Script should report normal mod removal."
+}
+finally {
+    Remove-Item -Path $tempGameDir -Recurse -Force -ErrorAction SilentlyContinue
 }
