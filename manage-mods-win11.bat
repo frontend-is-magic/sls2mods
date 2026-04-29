@@ -27,7 +27,7 @@ rem Steam -> Slay the Spire 2 -> Manage -> Browse local files
 echo.
 
 call :choose_dir
-if errorlevel 1 goto :end
+if errorlevel 1 goto :fatal_no_game_dir
 call :save_game_dir_config
 
 :after_game_dir
@@ -35,7 +35,7 @@ call :save_game_dir_config
 set "GAME_MODS=!GAME_DIR!\mods"
 if not exist "!GAME_MODS!" mkdir "!GAME_MODS!"
 call :ensure_baselib_installed
-if errorlevel 1 goto :end
+if errorlevel 1 goto :fatal_baselib_error
 
 :main_menu
 echo.
@@ -125,13 +125,20 @@ call :save_game_dir_config
 set "GAME_MODS=!GAME_DIR!\mods"
 if not exist "!GAME_MODS!" mkdir "!GAME_MODS!"
 call :ensure_baselib_installed
-if errorlevel 1 goto :end
+if errorlevel 1 goto :fatal_baselib_error
 echo Saved game folder:
 echo !GAME_DIR!
 goto :main_menu
 
 :ensure_baselib_installed
 set "BASELIB_DIR=!GAME_MODS!\BaseLib"
+set "BASELIB_MANUAL_URL=https://github.com/Alchyr/BaseLib-StS2/releases/latest"
+set "BASELIB_DOWNLOAD_ERROR="
+if defined MOD_MANAGER_TEST_BUNDLED_BASELIB_DIR (
+    set "BUNDLED_BASELIB_DIR=%MOD_MANAGER_TEST_BUNDLED_BASELIB_DIR%"
+) else (
+    set "BUNDLED_BASELIB_DIR=%SCRIPT_DIR%third_party\BaseLib"
+)
 if defined MOD_MANAGER_TEST_SKIP_BASELIB (
     echo Skipping BaseLib check because MOD_MANAGER_TEST_SKIP_BASELIB is set.
     exit /b 0
@@ -146,6 +153,11 @@ if defined MOD_MANAGER_TEST_BASELIB_SOURCE (
     call :install_baselib_from_local "%MOD_MANAGER_TEST_BASELIB_SOURCE%"
 ) else (
     call :install_baselib_from_github
+    if errorlevel 1 (
+        echo.
+        echo Trying bundled BaseLib fallback...
+        call :install_baselib_from_local "!BUNDLED_BASELIB_DIR!"
+    )
 )
 if errorlevel 1 exit /b 1
 
@@ -180,20 +192,64 @@ copy /y "!BASELIB_SOURCE!\BaseLib.json" "!BASELIB_DIR!\BaseLib.json" >nul
 exit /b 0
 
 :install_baselib_from_github
-if not exist "!BASELIB_DIR!" mkdir "!BASELIB_DIR!"
-set "BASELIB_RELEASE_API=https://api.github.com/repos/Alchyr/BaseLib-StS2/releases/latest"
-set "BASELIB_MANUAL_URL=https://github.com/Alchyr/BaseLib-StS2/releases/latest"
-set "BASELIB_DIR_ENV=!BASELIB_DIR!"
-set "BASELIB_RELEASE_API_ENV=!BASELIB_RELEASE_API!"
-"%POWERSHELL_EXE%" -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference = 'Stop'; [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $target = $env:BASELIB_DIR_ENV; $api = $env:BASELIB_RELEASE_API_ENV; $headers = @{ 'User-Agent' = 'sls2mods-manager' }; New-Item -ItemType Directory -Force -Path $target | Out-Null; $release = Invoke-RestMethod -Headers $headers -Uri $api; foreach ($name in @('BaseLib.dll', 'BaseLib.pck', 'BaseLib.json')) { $asset = $release.assets | Where-Object { $_.name -eq $name } | Select-Object -First 1; if ($null -eq $asset) { throw ('Missing BaseLib release asset: ' + $name) }; Invoke-WebRequest -Headers $headers -Uri $asset.browser_download_url -OutFile (Join-Path $target $name) }"
-if errorlevel 1 (
-    echo Failed to download BaseLib from GitHub.
-    echo Please install BaseLib manually from:
-    echo !BASELIB_MANUAL_URL!
-    echo Then copy BaseLib.dll, BaseLib.pck, and BaseLib.json to:
-    echo !BASELIB_DIR!
+if defined MOD_MANAGER_TEST_BASELIB_DOWNLOAD_FAIL (
+    set "BASELIB_DOWNLOAD_ERROR=Simulated GitHub BaseLib download failure."
+    echo !BASELIB_DOWNLOAD_ERROR!
     exit /b 1
 )
+if not exist "!BASELIB_DIR!" mkdir "!BASELIB_DIR!"
+set "BASELIB_RELEASE_API=https://api.github.com/repos/Alchyr/BaseLib-StS2/releases/latest"
+set "BASELIB_ERROR_FILE=%TEMP%\sls2-baselib-download-error-%RANDOM%-%RANDOM%.txt"
+set "BASELIB_DIR_ENV=!BASELIB_DIR!"
+set "BASELIB_RELEASE_API_ENV=!BASELIB_RELEASE_API!"
+set "BASELIB_ERROR_FILE_ENV=!BASELIB_ERROR_FILE!"
+"%POWERSHELL_EXE%" -NoProfile -ExecutionPolicy Bypass -Command "$ErrorActionPreference = 'Stop'; try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $target = $env:BASELIB_DIR_ENV; $api = $env:BASELIB_RELEASE_API_ENV; $headers = @{ 'User-Agent' = 'sls2mods-manager' }; New-Item -ItemType Directory -Force -Path $target | Out-Null; $release = Invoke-RestMethod -Headers $headers -Uri $api -TimeoutSec 20; foreach ($name in @('BaseLib.dll', 'BaseLib.pck', 'BaseLib.json')) { $asset = $release.assets | Where-Object { $_.name -eq $name } | Select-Object -First 1; if ($null -eq $asset) { throw ('Missing BaseLib release asset: ' + $name) }; Invoke-WebRequest -UseBasicParsing -Headers $headers -Uri $asset.browser_download_url -OutFile (Join-Path $target $name) -TimeoutSec 30 } } catch { Set-Content -Path $env:BASELIB_ERROR_FILE_ENV -Value $_.Exception.Message -Encoding UTF8; exit 1 }"
+if errorlevel 1 (
+    echo Failed to download BaseLib from GitHub.
+    if exist "!BASELIB_ERROR_FILE!" (
+        set /p "BASELIB_DOWNLOAD_ERROR="<"!BASELIB_ERROR_FILE!"
+        del /q "!BASELIB_ERROR_FILE!" 2>nul
+        echo Reason: !BASELIB_DOWNLOAD_ERROR!
+    )
+    exit /b 1
+)
+del /q "!BASELIB_ERROR_FILE!" 2>nul
+exit /b 0
+
+:fatal_baselib_error
+echo.
+echo Could not install BaseLib automatically.
+if defined BASELIB_DOWNLOAD_ERROR (
+    echo Last download error:
+    echo !BASELIB_DOWNLOAD_ERROR!
+)
+echo.
+echo The script tried GitHub first, then the bundled BaseLib fallback:
+echo !BUNDLED_BASELIB_DIR!
+echo.
+echo Please install BaseLib manually from:
+echo !BASELIB_MANUAL_URL!
+echo Then copy BaseLib.dll, BaseLib.pck, and BaseLib.json to:
+echo !BASELIB_DIR!
+call :pause_before_exit
+set "EXIT_CODE=1"
+goto :end
+
+:fatal_no_game_dir
+call :fatal_error "No valid Slay the Spire 2 folder was selected."
+goto :end
+
+:fatal_error
+echo.
+echo %~1
+call :pause_before_exit
+set "EXIT_CODE=1"
+goto :end
+
+:pause_before_exit
+if defined MOD_MANAGER_TEST_NO_PAUSE exit /b 0
+echo.
+pause
 exit /b 0
 
 :add_mod
@@ -373,5 +429,10 @@ for /d %%A in ("!GAME_MODS!\*") do (
 exit /b 0
 
 :end
+if defined EXIT_CODE (
+    set "FINAL_EXIT_CODE=!EXIT_CODE!"
+) else (
+    set "FINAL_EXIT_CODE=0"
+)
 popd >nul
-endlocal
+endlocal & exit /b %FINAL_EXIT_CODE%
