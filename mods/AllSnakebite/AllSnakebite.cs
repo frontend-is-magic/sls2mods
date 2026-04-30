@@ -176,25 +176,26 @@ public static class AllSnakebite
         CardModel? cardSource,
         ref Task<IEnumerable<DamageResult>> __result)
     {
-        if (!GetRuntimeConfig().Enabled || cardSource == null || cardSource.Type != CardType.Attack || amount <= 0m)
+        if (!GetRuntimeConfig().Enabled || cardSource == null || cardSource.Type != CardType.Attack || amount <= 0m || dealer == null)
         {
             return true;
         }
 
-        __result = ApplyPoisonInsteadOfDamage(targets, amount, dealer, cardSource);
+        __result = ApplyPoisonInsteadOfDamage(choiceContext, targets, amount, dealer, cardSource);
         return false;
     }
 
     private static async Task<IEnumerable<DamageResult>> ApplyPoisonInsteadOfDamage(
+        PlayerChoiceContext choiceContext,
         IEnumerable<Creature> targets,
         decimal amount,
-        Creature? dealer,
+        Creature dealer,
         CardModel cardSource)
     {
         var targetList = targets.ToList();
         foreach (var target in targetList)
         {
-            await PowerCmd.Apply<PoisonPower>(target, amount, dealer, cardSource);
+            await PowerCmd.Apply<PoisonPower>(choiceContext, target, amount, dealer, cardSource, silent: false);
         }
 
         return Array.Empty<DamageResult>();
