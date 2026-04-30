@@ -83,10 +83,10 @@ public sealed partial class CardRewardEnchantConfigMenu : SimpleModConfig
         var label = CreateRawLabelControl(labelText, 28);
         var row = new NConfigOptionRow(ModPrefix, labelText, label, tickbox)
         {
-            UniqueNameInOwner = true,
-            Owner = optionContainer
+            UniqueNameInOwner = true
         };
         optionContainer.AddChild(row, forceReadableName: false, Node.InternalMode.Disabled);
+        row.Owner = optionContainer;
     }
 
     private void AddKeywordBlacklistOptions(Control optionContainer)
@@ -108,10 +108,10 @@ public sealed partial class CardRewardEnchantConfigMenu : SimpleModConfig
             var rowLabel = ModMenuLocalization.Text($"Blacklist {keyword}", $"屏蔽 {keyword}");
             var row = new NConfigOptionRow(ModPrefix, rowLabel, label, tickbox)
             {
-                UniqueNameInOwner = true,
-                Owner = optionContainer
+                UniqueNameInOwner = true
             };
             section.ContentContainer.AddChild(row, forceReadableName: false, Node.InternalMode.Disabled);
+            row.Owner = optionContainer;
         }
     }
 

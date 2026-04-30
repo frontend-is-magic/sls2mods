@@ -80,10 +80,10 @@ public sealed class VakuuRoomInjectionConfigMenu : SimpleModConfig
         var label = CreateRawLabelControl(labelText, 28);
         var row = new NConfigOptionRow(ModPrefix, labelText, label, tickbox)
         {
-            UniqueNameInOwner = true,
-            Owner = optionContainer
+            UniqueNameInOwner = true
         };
         optionContainer.AddChild(row, forceReadableName: false, Node.InternalMode.Disabled);
+        row.Owner = optionContainer;
     }
 
     private static double PercentToProbability(double percent)
